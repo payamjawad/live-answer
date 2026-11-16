@@ -27,6 +27,7 @@
   }
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 html,body{height:100%;margin:0}
 body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",-apple-system,system-ui,"Segoe UI",sans-serif;font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overscroll-behavior:none}
 .app{display:flex;flex-direction:column;height:100%}
@@ -46,7 +47,7 @@ body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible
 .lenses{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;padding:5px;border-radius:999px;background:rgba(0,0,0,.5)}
 .lenses button{min-width:44px;height:44px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#fff;font:inherit;font-size:.9rem;font-weight:700}
 .lenses button[aria-pressed=true]{background:#F2E15A;color:#121810}
-.start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff}
+.start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;background:#000}
 .start p{margin:0;max-width:30ch;color:#D8E3DB}
 .start .hint{color:#F0B44C;font-size:.9rem}
 .start .btn.primary{flex:none;padding:0 28px;background:#F2E15A;border-color:#F2E15A;color:#121810}
@@ -72,7 +73,8 @@ body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible
 .earlier button{display:block;width:100%;text-align:left;margin:0 0 6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Bottom controls */
-.stats{display:flex;justify-content:space-between;gap:12px;margin:0;padding:6px 20px;font-size:.8rem;color:var(--pencil);background:var(--bar);border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.stats{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;width:100%;margin:0;padding:6px 20px;border:0;border-top:1px solid var(--line);font:inherit;font-size:.8rem;color:var(--pencil);background:var(--bar);font-variant-numeric:tabular-nums;text-align:left}
+.stats .warnText{color:var(--err);font-weight:600}
 .bar{display:flex;gap:8px;padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 10px);background:var(--bar)}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .btn{flex:1;min-height:50px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font:inherit;font-weight:600}
@@ -83,12 +85,15 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 dialog{width:100%;max-width:560px;max-height:88dvh;margin:auto auto 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 18px);border:0;border-radius:18px 18px 0 0;background:var(--paper);color:var(--ink);overflow-y:auto}
 dialog::backdrop{background:rgba(0,0,0,.55)}
 dialog h2{margin:0 0 14px;font-size:1.25rem}
-.field{display:block;margin:0 0 16px;border:0;padding:0}
+dialog h3{margin:0 0 8px;font-size:1rem}
+.field{display:block;margin:0 0 16px;border:0;padding:0;min-width:0}
 .field>span,.field legend{display:block;margin-bottom:6px;font-weight:600;font-size:.95rem;padding:0}
-.field small{display:block;margin-top:6px;color:var(--pencil);font-size:.82rem}
+.field small,.note{display:block;margin-top:6px;color:var(--pencil);font-size:.82rem}
 .row{display:flex;gap:8px}
-input[type=password],input[type=text],select{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
-.row button{flex:none;min-height:46px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2 label>span{display:block;margin-bottom:4px;font-size:.85rem;color:var(--pencil)}
+input[type=password],input[type=text],input[type=number],select{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+.row button,.plain{flex:none;min-height:46px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:600}
 .check{display:flex;gap:10px;align-items:flex-start;margin:0 0 16px;font-size:.95rem}
 .check input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--ink)}
 .seg{display:flex;gap:6px}
@@ -99,6 +104,13 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
 .seg input:focus-visible+span{outline:3px solid #4C8DF0;outline-offset:2px}
 .keystate{min-height:1.2em}
 .keystate.bad{color:var(--err)}
+.usage{margin:0 0 20px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.usage table{width:100%;border-collapse:collapse;font-size:.92rem}
+.usage td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.usage tr:last-child td{border-bottom:0}
+.usage td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;padding-left:12px}
+.usage .plain{margin-top:10px}
+.version{margin-top:14px;color:var(--pencil);font-size:.8rem}
 @media (prefers-reduced-motion:reduce){.q.fresh{animation:none}.status[data-kind=asking] .dot{animation:none}}
 </style>
 </head>
@@ -126,7 +138,9 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
     </div>
   </section>
 
-  <p class="stats"><span id="statCalls">0 API calls</span><span id="statSkipped">0 repeats skipped</span></p>
+  <button class="stats" id="stats" type="button" aria-label="Today’s usage, open details">
+    <span id="statCalls">0 calls today</span><span id="statTokens">0 tokens</span><span id="statSaved">0 reused free</span>
+  </button>
   <nav class="bar">
     <button class="btn" id="pauseBtn" type="button">Pause</button>
     <button class="btn primary" id="askBtn" type="button">Ask now</button>
@@ -136,6 +150,13 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
 
 <dialog id="settings" aria-labelledby="setTitle">
   <h2 id="setTitle">Settings</h2>
+
+  <section class="usage" id="usageBox" aria-labelledby="usageTitle">
+    <h3 id="usageTitle">Today’s usage</h3>
+    <table><tbody id="usageTable"></tbody></table>
+    <span class="note">Counters reset at midnight Pacific time, when Google’s daily free-tier limits reset.</span>
+    <button type="button" class="plain" id="resetUsage">Reset today’s counters</button>
+  </section>
 
   <div class="field">
     <span>Gemini API key</span>
@@ -161,7 +182,7 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
     </div>
   </fieldset>
 
-  <label class="check"><input type="checkbox" id="thinkInput"><span>Think harder. Slower, but more accurate on multi-step problems.</span></label>
+  <label class="check"><input type="checkbox" id="thinkInput"><span>Think harder. Slower, uses more output tokens, more accurate on multi-step problems.</span></label>
 
   <label class="field">
     <span>Image sent to the model</span>
@@ -183,12 +204,31 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
     </select>
   </label>
 
+  <fieldset class="field">
+    <legend>Limits</legend>
+    <div class="row2">
+      <label><span>Max calls per day</span><input type="number" id="capInput" inputmode="numeric" min="1" step="1"></label>
+      <label><span>Max calls per minute</span><input type="number" id="rpmInput" inputmode="numeric" min="1" step="1"></label>
+    </div>
+    <small>Your real free-tier limits are listed in Google AI Studio. Set these a little below them and the app pauses before Google starts refusing calls.</small>
+  </fieldset>
+
+  <fieldset class="field">
+    <legend>Cost estimate with billing on</legend>
+    <div class="row2">
+      <label><span>$ per 1M input tokens</span><input type="number" id="priceInInput" inputmode="decimal" min="0" step="0.01"></label>
+      <label><span>$ per 1M output tokens</span><input type="number" id="priceOutInput" inputmode="decimal" min="0" step="0.01"></label>
+    </div>
+    <small>On the free tier you pay nothing. This shows what the same use would cost on a paid key.</small>
+  </fieldset>
+
   <label class="field">
     <span>Camera</span>
     <select id="camSelect"></select>
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
+  <p class="version">Version 2</p>
 </dialog>
 
 <script>
@@ -196,27 +236,56 @@ input[type=password],input[type=text],select{width:100%;min-height:46px;padding:
 'use strict';
 const $ = id => document.getElementById(id);
 const video = $('video');
+const dlg = $('settings');
 
 /* ---------- Settings storage ---------- */
 const STORE = 'liveanswer.v1';
-const DEFAULTS = { key:'', model:'gemini-3.1-flash-lite', detail:'short', think:false, img:1024, crop:false, sens:'normal', deviceId:'' };
+const USTORE = 'liveanswer.usage';
+const DEFAULTS = {
+  key:'', model:'gemini-3.1-flash-lite', detail:'short', think:false, img:1024, crop:false, sens:'normal', deviceId:'',
+  dailyCap:300, rpm:10, priceIn:0.25, priceOut:1.5
+};
 let cfg = { ...DEFAULTS };
 try { const raw = localStorage.getItem(STORE); if (raw) cfg = { ...DEFAULTS, ...JSON.parse(raw) }; } catch (e) {}
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) {} }
 
 /* ---------- Tuning ---------- */
-const SENS = { calm:{ motion:10, change:14 }, normal:{ motion:7, change:9 }, eager:{ motion:5, change:6 } };
-const STEADY_MS = 600;   // camera must be still this long before we read
+// motion: frame-to-frame change that counts as "moving"; change: difference from the last asked view that counts as "new"
+const SENS = { calm:{ motion:9, change:12 }, normal:{ motion:7, change:8 }, eager:{ motion:5, change:5 } };
+const STEADY_MS = 700;   // camera must be still this long before we read
 const TICK_MS = 250;     // how often we look at a tiny frame (free, on-device)
 const MIN_GAP = 2000;    // minimum time between API calls
 const CROP = 0.7;        // center box size
+const W = 80, H = 60;    // size of the on-device comparison frame
 const FALLBACK_MODELS = ['gemini-3.1-flash-lite','gemini-3.5-flash','gemini-2.5-flash-lite','gemini-2.5-flash'];
 
 const st = {
   stream:null, timer:null, paused:false, prev:null, anchor:null, stableSince:0,
-  lastCall:-1e9, backoffUntil:0, ctrl:null, current:null, history:[],
-  calls:0, skipped:0, noThink:new Set(), wake:null, kind:'off'
+  lastCall:-1e9, backoffUntil:0, ctrl:null, current:null, history:[], recent:[],
+  noThink:new Set(), wake:null, kind:'off', lastIn:1100, checked:false
 };
+
+/* ---------- Usage tracking (per Pacific day, saved on the phone) ---------- */
+function pacificDay(){
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Los_Angeles', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date()); }
+  catch (e) { return new Date().toISOString().slice(0, 10); }
+}
+function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, inTok:0, outTok:0, estTok:0 }; }
+let usage = blankUsage();
+try { const u = JSON.parse(localStorage.getItem(USTORE) || 'null'); if (u && u.day === usage.day) usage = { ...usage, ...u }; } catch (e) {}
+function saveUsage(){ try { localStorage.setItem(USTORE, JSON.stringify(usage)); } catch (e) {} }
+function rollDay(){ if (usage.day !== pacificDay()){ usage = blankUsage(); saveUsage(); } }
+function cost(){ return (usage.inTok * Number(cfg.priceIn) + usage.outTok * Number(cfg.priceOut)) / 1e6; }
+function money(x){ return '$' + (x < 0.01 ? x.toFixed(4) : x.toFixed(2)); }
+function kfmt(n){ return n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
+function bill(m, kind){
+  let i = m.inTok, o = m.outTok;
+  if (!m.seen){ i = st.lastIn; o = 0; usage.estTok += i; }   // aborted before Google reported usage: estimate
+  else if (i) st.lastIn = i;
+  usage.inTok += i; usage.outTok += o;
+  if (kind) usage[kind]++;
+  saveUsage(); renderStats();
+}
 
 /* ---------- Status ---------- */
 function setStatus(kind, text){
@@ -225,8 +294,56 @@ function setStatus(kind, text){
   $('statusText').textContent = text;
 }
 function renderStats(){
-  $('statCalls').textContent = `${st.calls} API call${st.calls===1?'':'s'}`;
-  $('statSkipped').textContent = `${st.skipped} repeat${st.skipped===1?'':'s'} skipped`;
+  rollDay();
+  const near = usage.calls >= cfg.dailyCap * 0.9;
+  const c = $('statCalls');
+  c.textContent = `${usage.calls} of ${cfg.dailyCap} calls today`;
+  c.className = near ? 'warnText' : '';
+  $('statTokens').textContent = `${kfmt(usage.inTok + usage.outTok)} tokens, ≈${money(cost())} if paid`;
+  $('statSaved').textContent = `${usage.saved} reused free`;
+  if (dlg.open) renderUsage();
+}
+function renderUsage(){
+  const wasted = usage.dup + usage.none + usage.blurry + usage.aborted;
+  const pct = usage.calls ? Math.round(100 * wasted / usage.calls) : 0;
+  const avg = usage.calls ? Math.round(usage.inTok / usage.calls) : 0;
+  const rows = [
+    ['API calls', `${usage.calls} of ${cfg.dailyCap}`],
+    ['New answers', usage.answered],
+    ['Reused without a call', usage.saved],
+    ['Repeat caught after the call', usage.dup],
+    ['No question in view', usage.none],
+    ['Too blurry to read', usage.blurry],
+    ['Replaced by a newer view', usage.aborted],
+    ['Errors', usage.errors],
+    ['Calls without a new answer', `${pct}%`],
+    ['Input tokens', `${kfmt(usage.inTok)} (≈${avg} per call)`],
+    ['Output tokens, incl. thinking', kfmt(usage.outTok)],
+    ['Cost if on a paid key', money(cost())]
+  ];
+  if (usage.estTok) rows.push(['Estimated part of input', kfmt(usage.estTok)]);
+  const tb = $('usageTable');
+  tb.innerHTML = '';
+  rows.forEach(([k, v]) => {
+    const tr = document.createElement('tr');
+    const a = document.createElement('td'), b = document.createElement('td');
+    a.textContent = k; b.textContent = String(v);
+    tr.append(a, b); tb.append(tr);
+  });
+}
+
+/* ---------- Call gate: daily cap, per-minute pace, Google backoff ---------- */
+// Returns null if a call may go now, '' to wait silently, or a message to show.
+function gate(now, force){
+  rollDay();
+  if (usage.calls >= cfg.dailyCap) return `Daily limit of ${cfg.dailyCap} calls reached. Change it in Settings.`;
+  if (now < st.backoffUntil) return `Google’s limit hit, retrying in ${Math.ceil((st.backoffUntil - now) / 1000)} s`;
+  st.recent = st.recent.filter(t => now - t < 60000);
+  if (st.recent.length >= cfg.rpm){
+    return `Pacing at ${cfg.rpm} calls a minute, next in ${Math.ceil((60000 - (now - st.recent[0])) / 1000)} s`;
+  }
+  if (!force && now - st.lastCall < MIN_GAP) return '';
+  return null;
 }
 
 /* ---------- Camera ---------- */
@@ -262,10 +379,12 @@ async function startCamera(deviceId){
   st.stream = stream;
   video.srcObject = stream;
   try { await video.play(); } catch (e) {}
-  const s = stream.getVideoTracks()[0].getSettings ? stream.getVideoTracks()[0].getSettings() : {};
+  const tr = stream.getVideoTracks()[0];
+  const s = tr && tr.getSettings ? tr.getSettings() : {};
   cfg.deviceId = s.deviceId || deviceId || ''; save();
   $('startPanel').hidden = true;
-  st.prev = null; st.anchor = null; st.stableSince = performance.now();
+  st.prev = null; st.anchor = null; st.checked = false;
+  st.stableSince = performance.now() + 800;      // let exposure and focus settle before reading
   await listCameras();
   layoutCrop();
   if (!st.timer) st.timer = setInterval(tick, TICK_MS);
@@ -300,7 +419,7 @@ async function listCameras(){
     b.textContent = L.label;
     b.setAttribute('aria-label', L.name);
     b.setAttribute('aria-pressed', String(L.dev.deviceId === cfg.deviceId));
-    b.addEventListener('click', ev => { ev.stopPropagation(); startCamera(L.dev.deviceId); });
+    b.addEventListener('click', () => { if (L.dev.deviceId !== cfg.deviceId) startCamera(L.dev.deviceId); });
     box.append(b);
   });
 }
@@ -340,8 +459,12 @@ video.addEventListener('resize', layoutCrop);
 window.addEventListener('resize', layoutCrop);
 
 /* ---------- Change detection (on-device, free) ---------- */
-const sm = document.createElement('canvas'); sm.width = 64; sm.height = 48;
+const mid = document.createElement('canvas'); mid.width = W * 4; mid.height = H * 4;
+const midx = mid.getContext('2d');
+const sm = document.createElement('canvas'); sm.width = W; sm.height = H;
 const smx = sm.getContext('2d', { willReadFrequently:true });
+midx.imageSmoothingEnabled = smx.imageSmoothingEnabled = true;
+midx.imageSmoothingQuality = smx.imageSmoothingQuality = 'high';
 function srcRect(){
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!cfg.crop) return [0, 0, vw, vh];
@@ -351,46 +474,92 @@ function srcRect(){
 function grab(){
   if (video.readyState < 2 || !video.videoWidth) return null;
   const [x, y, w, h] = srcRect();
-  smx.drawImage(video, x, y, w, h, 0, 0, 64, 48);
-  const d = smx.getImageData(0, 0, 64, 48).data;
-  const g = new Uint8ClampedArray(64 * 48);
+  midx.drawImage(video, x, y, w, h, 0, 0, mid.width, mid.height);   // two-step shrink = smooth, less flicker
+  smx.drawImage(mid, 0, 0, W, H);
+  const d = smx.getImageData(0, 0, W, H).data;
+  const g = new Uint8ClampedArray(W * H);
   for (let i = 0, j = 0; i < d.length; i += 4, j++) g[j] = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
   return g;
 }
-// Mean absolute difference, ignoring overall brightness shifts from auto-exposure
-function diff(a, b){
-  const n = a.length; let ma = 0, mb = 0;
-  for (let i = 0; i < n; i++){ ma += a[i]; mb += b[i]; }
-  const off = (ma - mb) / n; let s = 0;
-  for (let i = 0; i < n; i++) s += Math.abs(a[i] - b[i] - off);
-  return s / n;
+function meanOf(a){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
+// Smallest average difference after sliding up to R pixels in any direction.
+// Hand drift becomes a small shift, which this ignores; a new page or question does not line up.
+// Stops early once it can’t get below `cap`; returns Infinity in that case.
+function diffShift(a, b, R, cap){
+  const off = meanOf(a) - meanOf(b);
+  let best = Infinity;
+  for (let dy = -R; dy <= R; dy++){
+    const y0 = Math.max(0, -dy), y1 = Math.min(H, H - dy);
+    for (let dx = -R; dx <= R; dx++){
+      const x0 = Math.max(0, -dx), x1 = Math.min(W, W - dx), rw = x1 - x0, n = rw * (y1 - y0);
+      const stop = Math.min(best, cap) * n;
+      let s = 0;
+      for (let y = y0; y < y1 && s <= stop; y++){
+        let ia = y * W + x0, ib = (y + dy) * W + x0 + dx;
+        for (let k = 0; k < rw; k++) s += Math.abs(a[ia++] - b[ib++] - off);
+      }
+      if (s <= stop){ const dd = s / n; if (dd < best) best = dd; }
+      if (best < 0.5) return best;
+    }
+  }
+  return best;
+}
+function makeSig(g){ return g ? { g } : null; }
+// Has this view been answered before? Then show it again for free.
+// Checks the 10 most recent answers, once per settled view.
+function findBySig(sig, T){
+  const lim = T.change * 0.6;
+  const pool = (st.current && st.current.done ? [st.current, ...st.history] : st.history).slice(0, 10);
+  for (const h of pool){
+    if (!h.done || !h.sigs) continue;
+    for (const s of h.sigs) if (diffShift(sig.g, s.g, 3, lim) < lim) return h;
+  }
+  return null;
+}
+function addSig(e, sig){
+  if (!e || !sig) return;
+  e.sigs = e.sigs || [];
+  e.sigs.push(sig);
+  if (e.sigs.length > 3) e.sigs.shift();
 }
 
 function tick(){
-  if (!st.stream || st.paused || document.hidden) return;
+  if (!st.stream || st.paused || document.hidden || dlg.open) return;
   const g = grab(); if (!g) return;
   const now = performance.now();
   const T = SENS[cfg.sens] || SENS.normal;
-  if (st.prev && diff(g, st.prev) > T.motion){
-    st.stableSince = now;
+  if (st.prev && diffShift(g, st.prev, 1, T.motion) > T.motion){
+    st.stableSince = Math.max(st.stableSince, now);
+    st.checked = false;
     if (!st.ctrl) setStatus('moving', 'Hold steady…');
   }
   st.prev = g;
   if (now - st.stableSince < STEADY_MS) return;
 
-  const changed = !st.anchor || diff(g, st.anchor) > T.change;
-  if (!changed){
+  if (st.anchor && diffShift(g, st.anchor, 4, T.change) <= T.change){
     if (!st.ctrl && st.kind === 'moving') setStatus('idle', st.current ? 'Same view, answer kept' : 'Point at a question');
     return;
   }
-  if (!cfg.key){ setStatus('warn', 'Add your API key in Settings'); return; }
-  if (now < st.backoffUntil){
-    setStatus('warn', `Free-tier limit hit, retrying in ${Math.ceil((st.backoffUntil - now) / 1000)} s`);
+
+  const sig = makeSig(g);
+  const hit = st.checked ? null : findBySig(sig, T);
+  st.checked = true;
+  if (hit){
+    st.anchor = g;
+    if (hit !== st.current){
+      if (st.ctrl){ st.ctrl.abort(); }
+      show(hit, true);
+      usage.saved++; saveUsage(); renderStats();
+      setStatus('ok', 'Seen before, shown without a call');
+    } else if (!st.ctrl) setStatus('idle', 'Same view, answer kept');
     return;
   }
-  if (now - st.lastCall < MIN_GAP) return;
+
+  if (!cfg.key){ setStatus('warn', 'Add your API key in Settings'); return; }
+  const block = gate(now, false);
+  if (block !== null){ if (block) setStatus('warn', block); return; }
   st.anchor = g;
-  ask(false);
+  ask(false, sig);
 }
 
 /* ---------- Capture ---------- */
@@ -404,9 +573,11 @@ function capture(){
   return cap.toDataURL('image/jpeg', 0.82).split(',')[1];
 }
 
-/* ---------- Duplicate detection ---------- */
-function normQ(q){ return q.toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}+\-*\/=^()<>√π]/gu, ''); }
-function nums(q){ return (q.match(/\d+(?:[.,]\d+)?/g) || []).join('|'); }
+/* ---------- Duplicate detection by question text ---------- */
+// Drop leading labels like "Algebra:", "Q3.", "Question 2)" before comparing.
+function core(q){ return q.replace(/^\s*(?:(?:q|question|problem|exercise|ex)\.?\s*\d+[a-z]?\s*[.:)\-]\s*|\p{L}[\p{L} ]{0,24}:\s+)/iu, ''); }
+function normQ(q){ return core(q).toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}+\-*\/=^()<>√π]/gu, ''); }
+function nums(q){ return (core(q).match(/\d+(?:[.,]\d+)?/g) || []).join('|'); }
 function dice(a, b){
   const m = new Map();
   for (let i = 0; i < a.length - 1; i++){ const k = a.slice(i, i + 2); m.set(k, (m.get(k) || 0) + 1); }
@@ -414,13 +585,17 @@ function dice(a, b){
   for (let i = 0; i < b.length - 1; i++){ const k = b.slice(i, i + 2), c = m.get(k); if (c > 0){ m.set(k, c - 1); hit++; } }
   return (2 * hit) / (a.length + b.length - 2);
 }
-// Same question = same numbers AND near-identical wording (tolerates small reading differences)
-function same(h, key, q){
-  if (!h || !h.key || !key) return false;
+// Same question = same numbers AND near-identical wording.
+function same(h, q){
+  if (!h || !h.q || !q) return false;
+  const a = normQ(h.q), b = normQ(q);
+  if (!a || !b) return false;
   if (nums(h.q) !== nums(q)) return false;
-  if (h.key === key) return true;
-  if (key.length < 12 || h.key.length < 12) return false;
-  return dice(h.key, key) >= 0.9;
+  if (a === b) return true;
+  const short = Math.min(a.length, b.length), long = Math.max(a.length, b.length);
+  if (short < 10) return false;
+  if ((a.includes(b) || b.includes(a)) && short / long >= 0.6) return true;
+  return dice(a, b) >= 0.82;
 }
 function remember(e){
   st.history = st.history.filter(h => h !== e);
@@ -438,7 +613,7 @@ function systemPrompt(){
   return [
     'You are reading one photo taken by a phone camera. Find the main question, problem or task in it (printed, handwritten or on a screen) and answer it.',
     'Reply in exactly this format and nothing else:',
-    'QUESTION: <the question on one line, as written, under 200 characters>',
+    'QUESTION: <only the question itself, on one line, without headings, numbering or labels, under 200 characters>',
     'ANSWER:',
     '<the final answer alone on the first line>',
     '<optional working>',
@@ -458,7 +633,7 @@ function thinkCfg(model){
   return g2 ? { thinkingBudget:0 } : { thinkingLevel:'minimal' };
 }
 
-async function streamGemini(b64, signal, onText){
+async function streamGemini(b64, signal, hooks){
   const model = cfg.model;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
   let useThink = !st.noThink.has(model);
@@ -469,7 +644,7 @@ async function streamGemini(b64, signal, onText){
         { inlineData:{ mimeType:'image/jpeg', data:b64 } },
         { text:'Answer the question in this photo.' }
       ] }],
-      generationConfig:{ temperature:0.2, maxOutputTokens: cfg.think ? 8192 : (cfg.detail === 'steps' ? 2048 : 1024) }
+      generationConfig:{ temperature:0.2, maxOutputTokens: cfg.think ? 8192 : (cfg.detail === 'steps' ? 1500 : 700) }
     };
     if (useThink) body.generationConfig.thinkingConfig = thinkCfg(model);
     const res = await fetch(url, {
@@ -483,6 +658,7 @@ async function streamGemini(b64, signal, onText){
       if (res.status === 400 && useThink && !/api key/i.test(text)){ st.noThink.add(model); useThink = false; continue; }
       throw new ApiError(res.status, text);
     }
+    hooks.onOpen();
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let pending = '';
@@ -497,11 +673,11 @@ async function streamGemini(b64, signal, onText){
         if (!line.startsWith('data:')) continue;
         const json = line.slice(5).trim();
         if (!json) continue;
-        try {
-          const obj = JSON.parse(json);
-          const parts = (obj.candidates && obj.candidates[0] && obj.candidates[0].content && obj.candidates[0].content.parts) || [];
-          for (const p of parts) if (p.text && !p.thought) onText(p.text);
-        } catch (e) {}
+        let obj;
+        try { obj = JSON.parse(json); } catch (e) { continue; }
+        if (obj.usageMetadata) hooks.onUsage(obj.usageMetadata);
+        const parts = (obj.candidates && obj.candidates[0] && obj.candidates[0].content && obj.candidates[0].content.parts) || [];
+        for (const p of parts) if (p.text && !p.thought) hooks.onText(p.text);
       }
     }
     return;
@@ -515,11 +691,11 @@ function handleError(e){
     try { info = JSON.parse(e.body).error || {}; } catch (_) {}
     const msg = info.message || '';
     if (e.status === 429){
-      let wait = 20;
+      let wait = 30;
       const rd = (info.details || []).find(d => d.retryDelay);
       if (rd) wait = parseFloat(rd.retryDelay) || wait;
       st.backoffUntil = now + wait * 1000; st.anchor = null;
-      setStatus('warn', `Free-tier limit hit, waiting ${Math.ceil(wait)} s`);
+      setStatus('warn', /per ?day|daily/i.test(msg) ? 'Google’s daily free limit is used up for this model' : `Google’s limit hit, waiting ${Math.ceil(wait)} s`);
       return;
     }
     if (e.status === 400 && /api key/i.test(msg)){ setStatus('err', 'API key rejected. Check it in Settings.'); return; }
@@ -542,16 +718,23 @@ function bodyOf(buf){
   return rest.replace(/^[\s*]*ANSWER[\s*]*:[ \t*]*\r?\n?/i, '');
 }
 
-async function ask(force){
+async function ask(force, sig){
   if (!cfg.key){ openSettings(); return; }
-  if (st.ctrl) st.ctrl.abort();           // a new question replaces the old one
+  const now = performance.now();
+  if (force){
+    const b = gate(now, true);
+    if (b){ setStatus('warn', b); return; }
+  }
+  if (!sig) sig = makeSig(grab());
+  if (st.ctrl) st.ctrl.abort();           // a newer view replaces the old request
   const ctrl = new AbortController(); st.ctrl = ctrl;
-  st.lastCall = performance.now();
+  st.lastCall = now; st.recent.push(now);
   const img = capture();
   if (!img){ st.ctrl = null; return; }
-  st.calls++; renderStats();
+  rollDay(); usage.calls++; saveUsage(); renderStats();
   setStatus('asking', 'Reading…');
   const t0 = performance.now();
+  const meter = { inTok:0, outTok:0, seen:false, open:false };
   let buf = '', phase = 'head', entry = null, handled = false;
 
   const onText = txt => {
@@ -563,24 +746,24 @@ async function ask(force){
       const m = buf.match(HEAD_RE);
       if (!m){
         if (buf.length < 400) return;
-        entry = openEntry('', ''); phase = 'body';
+        entry = openEntry('', sig); phase = 'body';
       } else {
-        const q = m[1].trim(), key = normQ(q);
+        const q = m[1].trim();
         if (!force){
-          if (st.current && same(st.current, key, q)){
-            handled = true; ctrl.abort(); st.skipped++; renderStats();
+          if (st.current && same(st.current, q)){
+            handled = true; addSig(st.current, sig); ctrl.abort();
             setStatus('ok', 'Same question, answer kept');
             return;
           }
-          const past = st.history.find(h => h !== st.current && same(h, key, q));
+          const past = st.history.find(h => h !== st.current && same(h, q));
           if (past){
-            handled = true; ctrl.abort(); st.skipped++; renderStats();
+            handled = true; addSig(past, sig); ctrl.abort();
             show(past, true);
             setStatus('ok', 'Seen before, showing saved answer');
             return;
           }
         }
-        entry = openEntry(q, key); phase = 'body';
+        entry = openEntry(q, sig); phase = 'body';
         setStatus('asking', 'Answering…');
       }
     }
@@ -590,25 +773,39 @@ async function ask(force){
       if (st.current === entry) paintBody(entry, false);
     }
   };
+  const hooks = {
+    onText,
+    onOpen: () => { meter.open = true; },
+    onUsage: u => {
+      meter.seen = true;
+      if (u.promptTokenCount) meter.inTok = u.promptTokenCount;
+      meter.outTok = (u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0);
+    }
+  };
 
   try {
-    await streamGemini(img, ctrl.signal, onText);
-    if (handled) return;
+    await streamGemini(img, ctrl.signal, hooks);
     if (phase === 'head'){
       const t = buf.replace(/^[\s*]+/, '');
-      if (/^NONE/i.test(t)){ setStatus('idle', 'No question in view'); return; }
-      if (/^BLURRY/i.test(t)){ setStatus('warn', 'Too blurry. Move closer or hold still.'); return; }
-      if (!buf.trim()){ setStatus('warn', 'Empty reply. Tap Ask now to retry.'); return; }
-      entry = openEntry('', ''); entry.raw = bodyOf(buf);
+      if (/^NONE/i.test(t)){ bill(meter, 'none'); setStatus('idle', 'No question in view'); return; }
+      if (/^BLURRY/i.test(t)){ bill(meter, 'blurry'); setStatus('warn', 'Too blurry. Move closer or hold still.'); return; }
+      if (!buf.trim()){ bill(meter, 'errors'); setStatus('warn', 'Empty reply. Tap Ask now to retry.'); return; }
+      entry = openEntry('', sig); entry.raw = bodyOf(buf);
     }
     entry.done = true;
     entry.ms = Math.round(performance.now() - t0);
-    if (entry.key) remember(entry);
+    entry.inTok = meter.inTok; entry.outTok = meter.outTok;
+    if (entry.q) remember(entry);
+    bill(meter, 'answered');
     if (st.current === entry) paintBody(entry, true);
     renderEarlier();
     setStatus('ok', `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
   } catch (e) {
-    if (e.name === 'AbortError') return;
+    if (e.name === 'AbortError'){
+      bill(meter, handled ? 'dup' : 'aborted');
+      return;
+    }
+    if (meter.open) bill(meter, 'errors'); else { usage.errors++; saveUsage(); renderStats(); }
     handleError(e);
     if (entry && st.current === entry){ entry.raw += '\n\n(cut off)'; paintBody(entry, true); }
   } finally {
@@ -641,8 +838,8 @@ function renderMath(el){
     });
   } catch (e) {}
 }
-function openEntry(q, key){
-  const e = { q, key, raw:'', done:false };
+function openEntry(q, sig){
+  const e = { q, raw:'', done:false, sigs: sig ? [sig] : [] };
   show(e, true);
   return e;
 }
@@ -658,7 +855,9 @@ function paintBody(e, final){
   const a = $('aBody');
   a.innerHTML = format(e.raw);
   if (final) renderMath(a);
-  $('meta').textContent = e.ms ? `Full answer in ${(e.ms / 1000).toFixed(1)} s, first words in ${((e.first || e.ms) / 1000).toFixed(1)} s` : '';
+  $('meta').textContent = e.ms
+    ? `Answered in ${(e.ms / 1000).toFixed(1)} s, first words at ${((e.first || e.ms) / 1000).toFixed(1)} s. Used ${e.inTok || '?'} input and ${e.outTok || '?'} output tokens.`
+    : '';
 }
 function renderEarlier(){
   const list = st.history.filter(h => h !== st.current).slice(0, 8);
@@ -675,7 +874,6 @@ function renderEarlier(){
 }
 
 /* ---------- Settings ---------- */
-const dlg = $('settings');
 async function loadModels(){
   const sel = $('modelSelect');
   let names = [];
@@ -709,7 +907,7 @@ async function loadModels(){
     sel.append(o);
   });
 }
-function openSettings(){
+function openSettings(toUsage){
   $('keyInput').value = cfg.key;
   $('keyInput').type = 'password'; $('showKey').textContent = 'Show';
   document.querySelectorAll('input[name=detail]').forEach(r => { r.checked = r.value === cfg.detail; });
@@ -717,15 +915,28 @@ function openSettings(){
   $('imgSelect').value = String(cfg.img);
   $('cropInput').checked = !!cfg.crop;
   $('sensSelect').value = cfg.sens;
+  $('capInput').value = cfg.dailyCap;
+  $('rpmInput').value = cfg.rpm;
+  $('priceInInput').value = cfg.priceIn;
+  $('priceOutInput').value = cfg.priceOut;
+  renderUsage();
   if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
+  if (toUsage) $('usageBox').scrollIntoView({ block:'start' });
   loadModels();
+}
+function num(id, fallback, min){
+  const v = Number($(id).value);
+  return Number.isFinite(v) && v >= min ? v : fallback;
 }
 $('showKey').addEventListener('click', () => {
   const k = $('keyInput'); const hidden = k.type === 'password';
   k.type = hidden ? 'text' : 'password'; $('showKey').textContent = hidden ? 'Hide' : 'Show';
 });
 $('keyInput').addEventListener('change', loadModels);
+$('resetUsage').addEventListener('click', () => { usage = blankUsage(); saveUsage(); renderStats(); renderUsage(); });
 $('saveSettings').addEventListener('click', () => {
+  const cropBefore = cfg.crop;
   cfg.key = $('keyInput').value.trim();
   cfg.model = $('modelSelect').value || cfg.model;
   const d = document.querySelector('input[name=detail]:checked'); if (d) cfg.detail = d.value;
@@ -733,29 +944,31 @@ $('saveSettings').addEventListener('click', () => {
   cfg.img = Number($('imgSelect').value) || 1024;
   cfg.crop = $('cropInput').checked;
   cfg.sens = $('sensSelect').value;
+  cfg.dailyCap = Math.round(num('capInput', cfg.dailyCap, 1));
+  cfg.rpm = Math.round(num('rpmInput', cfg.rpm, 1));
+  cfg.priceIn = num('priceInInput', cfg.priceIn, 0);
+  cfg.priceOut = num('priceOutInput', cfg.priceOut, 0);
   const cam = $('camSelect').value;
   const camChanged = cam && cam !== cfg.deviceId;
   save();
   dlg.close();
-  st.anchor = null;                       // re-read the view with the new settings
+  renderStats();
+  if (cfg.crop !== cropBefore){ st.anchor = null; st.prev = null; }
   layoutCrop();
   if (camChanged) startCamera(cam);
-  else if (st.stream) setStatus('idle', cfg.key ? 'Point at a question' : 'Add your API key in Settings');
+  else if (st.stream) setStatus('idle', cfg.key ? 'Watching' : 'Add your API key in Settings');
 });
 
 /* ---------- Controls ---------- */
 $('startBtn').addEventListener('click', () => startCamera(cfg.deviceId));
-$('settingsBtn').addEventListener('click', openSettings);
+$('settingsBtn').addEventListener('click', () => openSettings(false));
+$('stats').addEventListener('click', () => openSettings(true));
 $('askBtn').addEventListener('click', () => { if (!st.stream) startCamera(cfg.deviceId); else ask(true); });
 $('pauseBtn').addEventListener('click', () => {
   st.paused = !st.paused;
   $('pauseBtn').textContent = st.paused ? 'Resume' : 'Pause';
-  if (st.paused){ if (st.ctrl) st.ctrl.abort(); setStatus('idle', 'Paused'); }
+  if (st.paused){ if (st.ctrl) st.ctrl.abort(); setStatus('idle', 'Paused, no calls'); }
   else { st.stableSince = performance.now(); setStatus('idle', 'Watching'); }
-});
-$('vf').addEventListener('click', e => {
-  if (e.target.closest('button')) return;
-  if (st.stream && !st.paused) ask(true);
 });
 
 renderStats();
