@@ -124,6 +124,17 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
 .lim{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px}
 .lim legend{padding:0 4px;font-weight:600;font-size:.92rem}
 .version{margin-top:14px;color:var(--pencil);font-size:.8rem}
+@media (orientation:landscape) and (max-height:540px){
+  .app{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto}
+  .vf{grid-column:1;grid-row:1 / span 3;height:100%}
+  .sheet{grid-column:2;grid-row:1;padding:12px calc(env(safe-area-inset-right,0px) + 16px) 6px 16px}
+  .stats{grid-column:2;grid-row:2;padding-right:calc(env(safe-area-inset-right,0px) + 16px)}
+  .bar{grid-column:2;grid-row:3;padding:6px calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 6px) 10px}
+  .btn{min-height:44px}
+  .status{top:10px;left:calc(env(safe-area-inset-left,0px) + 10px)}
+  .final{font-size:1.3rem}
+  dialog{max-height:92dvh}
+}
 @media (prefers-reduced-motion:reduce){.q.fresh{animation:none}.status[data-kind=asking] .dot{animation:none}}
 </style>
 </head>
@@ -219,9 +230,9 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   <label class="field">
     <span>When to treat the view as a new question</span>
     <select id="sensSelect">
-      <option value="calm">Calm: only big changes</option>
-      <option value="normal">Normal</option>
-      <option value="eager">Eager: small changes too</option>
+      <option value="calm">Calm: only big changes, waits 0.9 s</option>
+      <option value="normal">Normal: waits 0.45 s</option>
+      <option value="eager">Quick: small changes too, waits 0.3 s</option>
     </select>
   </label>
 
@@ -233,7 +244,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 3</p>
+  <p class="version">Version 3.2</p>
 </dialog>
 
 <script>
@@ -245,10 +256,10 @@ const dlg = $('settings');
 
 /* ---------- Providers ---------- */
 const PROV = {
-  gemini:     { name:'Gemini', kind:'gemini', model:'gemini-3.1-flash-lite', cap:300, rpm:10, pin:0.25, pout:1.5,
+  gemini:     { name:'Gemini', kind:'gemini', model:'gemini-3.1-flash-lite', cap:450, rpm:14, pin:0.25, pout:1.5,
                 fallback:['gemini-3.1-flash-lite','gemini-3.5-flash','gemini-2.5-flash-lite','gemini-2.5-flash'] },
-  groq:       { name:'Groq', kind:'openai', base:'https://api.groq.com/openai/v1', model:'meta-llama/llama-4-scout-17b-16e-instruct', cap:900, rpm:25, pin:0.11, pout:0.34, img:'object',
-                fallback:['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct'] },
+  groq:       { name:'Groq', kind:'openai', base:'https://api.groq.com/openai/v1', model:'qwen/qwen3.8-27b', cap:900, rpm:25, pin:0.11, pout:0.34, img:'object',
+                fallback:['qwen/qwen3.8-27b'] },
   mistral:    { name:'Mistral', kind:'openai', base:'https://api.mistral.ai/v1', model:'mistral-small-latest', cap:300, rpm:20, pin:0, pout:0, img:'string',
                 fallback:['mistral-small-latest','mistral-medium-latest','pixtral-large-latest','pixtral-12b-latest'] },
   openrouter: { name:'OpenRouter', kind:'openai', base:'https://openrouter.ai/api/v1', model:'', cap:45, rpm:15, pin:0, pout:0, img:'object', extra:{ usage:{ include:true } },
@@ -271,6 +282,8 @@ let cfg = defaults();
     if (raw){
       const c = JSON.parse(raw);
       cfg = { ...cfg, ...c, keys:{ ...cfg.keys, ...(c.keys || {}) }, models:{ ...cfg.models, ...(c.models || {}) }, limits:{ ...cfg.limits, ...(c.limits || {}) } };
+      const gl = cfg.limits.gemini;
+      if (gl && gl.cap === 300 && gl.rpm === 10){ gl.cap = 450; gl.rpm = 14; }   // old untouched defaults
       return;
     }
     const old = JSON.parse(localStorage.getItem(OLD) || 'null');
@@ -285,13 +298,13 @@ let cfg = defaults();
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) {} }
 
 /* ---------- Tuning ---------- */
-const SENS = { calm:{ motion:9, change:12 }, normal:{ motion:7, change:8 }, eager:{ motion:5, change:5 } };
-const STEADY_MS = 700, TICK_MS = 250, MIN_GAP = 2000, CROP = 0.7, W = 80, H = 60;
+const SENS = { calm:{ motion:9, change:12, steady:900 }, normal:{ motion:7, change:8, steady:450 }, eager:{ motion:5, change:5, steady:300 } };
+const TICK_MS = 150, MIN_GAP = 1200, MAX_INFLIGHT = 2, CROP = 0.7, W = 80, H = 60;
 
 const st = {
   stream:null, timer:null, paused:false, prev:null, anchor:null, stableSince:0, checked:false,
   lastCall:-1e9, backoff:{}, recent:{}, ctrl:null, altCtrls:new Set(), current:null, history:[],
-  noThink:new Set(), wake:null, kind:'off', lastIn:{}
+  noThink:new Set(), wake:null, kind:'off', lastIn:{}, inflight:new Set(), seq:0, shownSeq:0
 };
 
 /* ---------- Usage tracking (per Pacific day, saved on the phone) ---------- */
@@ -566,22 +579,23 @@ function tick(){
   if (st.prev && diffShift(g, st.prev, 1, T.motion) > T.motion){
     st.stableSince = Math.max(st.stableSince, now);
     st.checked = false;
-    if (!st.ctrl) setStatus('moving', 'Hold steady…');
+    if (!st.inflight.size) setStatus('moving', 'Hold steady…');
   }
   st.prev = g;
-  if (now - st.stableSince < STEADY_MS) return;
-  if (st.ctrl) return;   // let the current answer finish; the view is checked again right after
+  if (now - st.stableSince < T.steady) return;
 
   if (st.anchor && diffShift(g, st.anchor, 4, T.change) <= T.change){
-    if (st.kind === 'moving') setStatus('idle', st.current ? 'Same view, answer kept' : 'Point at a question');
+    if (st.kind === 'moving' && !st.inflight.size) setStatus('idle', st.current ? 'Same view, answer kept' : 'Point at a question');
     return;
   }
+  if (st.inflight.size >= MAX_INFLIGHT) return;   // two answers already on the way; check again once one lands
   const sig = makeSig(g);
   const hit = st.checked ? null : findBySig(sig, T);
   st.checked = true;
   if (hit){
     st.anchor = g;
     if (hit !== st.current){
+      st.shownSeq = st.seq + 1;   // answers still arriving for older views stay in Earlier
       show(hit, true);
       usage.saved++; saveUsage(); renderStats();
       setStatus('ok', 'Seen before, shown without a call');
@@ -636,8 +650,10 @@ function remember(e){
 }
 
 /* ---------- Prompt ---------- */
+const nativeReason = (p, model) => p === 'groq' && /qwen3|gpt-oss/i.test(model || '');
+const VISION_RE = /qwen3\.[5-9]|vision|llama-4|scout|maverick|llava|muse-spark|-vl\b|vl-/i;
 function instructions(p){
-  const textThink = cfg.think && PROV[p].kind !== 'gemini';
+  const textThink = cfg.think && PROV[p].kind !== 'gemini' && !nativeReason(p, cfg.models[p]);
   const len = {
     auto:'Match the length to the question: just the result for a simple calculation, up to 4 short lines of working for a multi-step problem, and 2 to 4 sentences for a conceptual or written question.',
     short:'Keep it short: at most 3 short lines of working, only if they help.',
@@ -664,7 +680,7 @@ function instructions(p){
   ].join('\n');
 }
 function maxTokens(p){
-  if (cfg.think) return PROV[p].kind === 'gemini' ? 8192 : 2000;
+  if (cfg.think) return PROV[p].kind === 'gemini' || nativeReason(p, cfg.models[p]) ? 8192 : 2000;
   return cfg.detail === 'steps' ? 1500 : 900;
 }
 function thinkCfg(model){
@@ -721,6 +737,31 @@ async function streamGemini(model, b64, signal, hooks){
     return;
   }
 }
+// Removes <think>…</think> blocks from streamed text, even when a tag is split across chunks.
+function thinkFilter(){
+  let inT = false, carry = '';
+  return t => {
+    let s = carry + t, out = '';
+    carry = '';
+    while (s.length){
+      if (inT){
+        const e = s.indexOf('</think>');
+        if (e < 0){ carry = s.slice(-8); break; }
+        s = s.slice(e + 8); inT = false;
+      } else {
+        const b = s.indexOf('<think>');
+        if (b < 0){
+          const k = s.lastIndexOf('<');
+          if (k >= 0 && s.length - k < 7 && '<think>'.startsWith(s.slice(k))){ out += s.slice(0, k); carry = s.slice(k); }
+          else out += s;
+          break;
+        }
+        out += s.slice(0, b); s = s.slice(b + 7); inT = true;
+      }
+    }
+    return out;
+  };
+}
 async function streamOpenAI(p, model, b64, signal, hooks){
   const P = PROV[p];
   const dataUrl = 'data:image/jpeg;base64,' + b64;
@@ -732,20 +773,31 @@ async function streamOpenAI(p, model, b64, signal, hooks){
   };
   const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.keys[p] };
   if (p === 'openrouter') headers['X-Title'] = 'Live Answer';
-  const res = await fetch(P.base + '/chat/completions', { method:'POST', headers, body:JSON.stringify(body), signal });
-  if (!res.ok){
+  let useReason = nativeReason(p, model) && !st.noThink.has(p + ':' + model);
+  let res;
+  for (let attempt = 0; attempt < 2; attempt++){
+    const b = { ...body };
+    if (useReason){
+      b.reasoning_effort = cfg.think ? 'high' : 'none';
+      if (cfg.think) b.reasoning_format = 'hidden';
+    }
+    res = await fetch(P.base + '/chat/completions', { method:'POST', headers, body:JSON.stringify(b), signal });
+    if (res.ok) break;
     const text = await res.text().catch(() => '');
+    if (res.status === 400 && useReason && /reason/i.test(text)){ st.noThink.add(p + ':' + model); useReason = false; continue; }
     throw new ApiError(res.status, text, parseFloat(res.headers.get('retry-after')));
   }
   hooks.onOpen();
+  const strip = thinkFilter();
+  const emit = s => { const o = strip(s); if (o) hooks.onText(o); };
   await readSSE(res, obj => {
     if (obj.error) throw new ApiError(502, JSON.stringify(obj));
     const u = obj.usage || (obj.x_groq && obj.x_groq.usage);
     if (u) hooks.onUsage({ promptTokenCount:u.prompt_tokens, candidatesTokenCount:u.completion_tokens });
     const ch = obj.choices && obj.choices[0];
     const c = ch && ch.delta && ch.delta.content;
-    if (typeof c === 'string' && c) hooks.onText(c);
-    else if (Array.isArray(c)) c.forEach(part => { if (part && part.type === 'text' && part.text) hooks.onText(part.text); });
+    if (typeof c === 'string' && c) emit(c);
+    else if (Array.isArray(c)) c.forEach(part => { if (part && part.type === 'text' && part.text) emit(part.text); });
   });
 }
 function streamAny(p, model, b64, signal, hooks){
@@ -795,22 +847,25 @@ async function ask(force, sig){
   if (force){
     const b = gate(p, now, true);
     if (b){ setStatus('warn', b); return; }
-    if (st.ctrl) st.ctrl.abort();
-  } else if (st.ctrl) return;
+    st.inflight.forEach(c => c.abort());
+  } else if (st.inflight.size >= MAX_INFLIGHT) return;
   if (!sig) sig = makeSig(grab());
-  const ctrl = new AbortController(); st.ctrl = ctrl;
-  st.lastCall = now; noteCall(p, now);
   const img = capture();
-  if (!img){ st.ctrl = null; return; }
+  if (!img) return;
+  const ctrl = new AbortController(); st.inflight.add(ctrl);
+  const seq = ++st.seq;
+  const say = (k, t) => { if (seq === st.seq) setStatus(k, t); };
+  const front = () => seq >= st.shownSeq;
+  st.lastCall = now; noteCall(p, now);
   count(p);
-  setStatus('asking', 'Reading…');
+  say('asking', 'Reading…');
   const t0 = performance.now();
   const meter = { inTok:0, outTok:0, seen:false, open:false };
   let buf = '', phase = 'head', entry = null, handled = false;
   const begin = q => {
-    entry = openEntry(q, sig);
-    entry.prov = p; entry.model = model;
+    entry = { q, raw:'', done:false, sigs: sig ? [sig] : [], prov:p, model };
     phase = 'body';
+    if (front()){ st.shownSeq = seq; show(entry, true); }
     startAlt(entry, img);
   };
   const onText = txt => {
@@ -828,19 +883,19 @@ async function ask(force, sig){
         if (!force){
           if (st.current && same(st.current, q)){
             handled = true; addSig(st.current, sig); ctrl.abort();
-            setStatus('ok', 'Same question, answer kept');
+            say('ok', 'Same question, answer kept');
             return;
           }
           const past = st.history.find(h => h !== st.current && same(h, q));
           if (past){
             handled = true; addSig(past, sig); ctrl.abort();
-            show(past, true);
-            setStatus('ok', 'Seen before, showing saved answer');
+            if (front()){ st.shownSeq = seq; show(past, true); }
+            say('ok', 'Seen before, showing saved answer');
             return;
           }
         }
         begin(q);
-        setStatus('asking', 'Answering…');
+        say('asking', 'Answering…');
       }
     }
     if (phase === 'body'){
@@ -855,9 +910,9 @@ async function ask(force, sig){
     await streamAny(p, model, img, ctrl.signal, hooks);
     if (phase === 'head'){
       const t = buf.replace(/^[\s*]+/, '');
-      if (/^NONE/i.test(t)){ bill(p, meter, 'none'); setStatus('idle', 'No question in view'); return; }
-      if (/^BLURRY/i.test(t)){ bill(p, meter, 'blurry'); setStatus('warn', 'Too blurry. Move closer or hold still.'); return; }
-      if (!buf.trim()){ bill(p, meter, 'errors'); setStatus('warn', 'Empty reply. Tap Ask now to retry.'); return; }
+      if (/^NONE/i.test(t)){ bill(p, meter, 'none'); say('idle', 'No question in view'); return; }
+      if (/^BLURRY/i.test(t)){ bill(p, meter, 'blurry'); say('warn', 'Too blurry. Move closer or hold still.'); return; }
+      if (!buf.trim()){ bill(p, meter, 'errors'); say('warn', 'Empty reply. Tap Ask now to retry.'); return; }
       begin('');
       entry.raw = bodyOf(buf);
     }
@@ -868,14 +923,16 @@ async function ask(force, sig){
     bill(p, meter, 'answered');
     if (st.current === entry) paintBody(entry, true);
     renderEarlier();
-    setStatus('ok', `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
+    say('ok', `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
   } catch (e) {
     if (e.name === 'AbortError'){ bill(p, meter, handled ? 'dup' : 'aborted'); return; }
     if (meter.open) bill(p, meter, 'errors'); else { usage.errors++; saveUsage(); renderStats(); }
-    handleError(p, e);
-    if (entry && st.current === entry){ entry.raw += '\n\n(cut off)'; entry.done = true; paintBody(entry, true); }
+    const r = errInfo(p, e);
+    if (r.retry) st.anchor = null;
+    say(r.kind, r.text);
+    if (entry){ entry.raw += '\n\n(cut off)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
   } finally {
-    if (st.ctrl === ctrl) st.ctrl = null;
+    st.inflight.delete(ctrl);
   }
 }
 
@@ -1051,7 +1108,12 @@ async function listModels(p, key){
   const j = await r.json();
   let list = (j.data || []).filter(m => m.active !== false);
   if (p === 'mistral'){ const v = list.filter(m => m.capabilities && m.capabilities.vision); if (v.length) list = v; }
-  if (p === 'groq'){ const v = list.filter(m => /llama-4|vision|scout|maverick|llava|vl\b|-vl/i.test(m.id)); if (v.length) list = v; }
+  if (p === 'groq'){
+    list = list.filter(m => !/whisper|orpheus|tts|guard|safeguard|distil/i.test(m.id));
+    const rank = id => VISION_RE.test(id) ? 0 : 1;
+    return [...new Set(list.map(m => m.id))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+      .map(id => ({ id, label: id + (VISION_RE.test(id) ? ' (reads images)' : ''), free: VISION_RE.test(id) }));
+  }
   const ids = [...new Set(list.map(m => m.id))].sort();
   return ids.map(id => ({ id, label:id }));
 }
@@ -1069,8 +1131,9 @@ async function fillModels(p, sel, note){
     try {
       list = modelCache[p + key] || await listModels(p, key);
       modelCache[p + key] = list;
-      ks.textContent = `Key works. ${list.length} image-capable models.`;
-      note.textContent = p === 'openrouter' ? 'Models marked (free) cost nothing but have tight daily limits.' : '';
+      ks.textContent = p === 'groq' ? `Key works. Pick a model marked “reads images”.` : `Key works. ${list.length} image-capable models.`;
+      note.textContent = p === 'openrouter' ? 'Models marked (free) cost nothing but have tight daily limits.'
+        : p === 'groq' ? 'Only models marked “reads images” can see the camera photo.' : '';
     } catch (e) {
       const bad = e instanceof ApiError && (e.status === 401 || e.status === 403 || e.status === 400);
       ks.textContent = bad ? 'This key was rejected. Copy it again.' : `Couldn’t reach ${PROV[p].name} from this browser. Calls may still work, or it may need a proxy.`;
@@ -1187,7 +1250,7 @@ $('pauseBtn').addEventListener('click', () => {
   st.paused = !st.paused;
   $('pauseBtn').textContent = st.paused ? 'Resume' : 'Pause';
   if (st.paused){
-    if (st.ctrl) st.ctrl.abort();
+    st.inflight.forEach(c => c.abort());
     st.altCtrls.forEach(c => c.abort());
     setStatus('idle', 'Paused, no calls');
   } else { st.stableSince = performance.now(); setStatus('idle', 'Watching'); }
