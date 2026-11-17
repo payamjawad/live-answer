@@ -244,7 +244,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 3.2</p>
+  <p class="version">Version 3.4</p>
 </dialog>
 
 <script>
@@ -845,6 +845,7 @@ async function ask(force, sig){
   if (!model){ setStatus('warn', 'Pick a model in Settings'); return; }
   const now = performance.now();
   if (force){
+    st.timeouts = 0;
     const b = gate(p, now, true);
     if (b){ setStatus('warn', b); return; }
     st.inflight.forEach(c => c.abort());
@@ -904,7 +905,15 @@ async function ask(force, sig){
       if (st.current === entry) paintBody(entry, false);
     }
   };
-  const hooks = { onText, onOpen:() => { meter.open = true; }, onUsage:u => applyUsage(meter, u) };
+  const hooks = { onText:t => { lastData = performance.now(); gotText = true; onText(t); }, onOpen:() => { meter.open = true; lastData = performance.now(); }, onUsage:u => applyUsage(meter, u) };
+  // Watchdog: a call that goes quiet is stopped and the view is asked again once.
+  const lim = cfg.think ? { first:30000, stall:15000, total:45000 } : { first:15000, stall:10000, total:30000 };
+  let lastData = t0, gotText = false;
+  const watch = setInterval(() => {
+    const t = performance.now();
+    if (phase === 'head' && !handled) say('asking', `${cfg.think ? 'Thinking' : 'Reading'}… ${Math.round((t - t0) / 1000)} s`);
+    if ((!gotText && t - t0 > lim.first) || (gotText && t - lastData > lim.stall) || t - t0 > lim.total){ ctrl.timedOut = true; ctrl.abort(); }
+  }, 1000);
 
   try {
     await streamAny(p, model, img, ctrl.signal, hooks);
@@ -923,8 +932,19 @@ async function ask(force, sig){
     bill(p, meter, 'answered');
     if (st.current === entry) paintBody(entry, true);
     renderEarlier();
+    st.timeouts = 0;
     say('ok', `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
   } catch (e) {
+    if (e.name === 'AbortError' && ctrl.timedOut){
+      bill(p, meter, 'errors');
+      if (entry){ entry.raw += '\n\n(cut off: took too long)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
+      st.timeouts = (st.timeouts || 0) + 1;
+      if (seq === st.seq){
+        if (st.timeouts < 2){ st.anchor = null; say('warn', `${PROV[p].name} took too long, asking again`); }
+        else say('warn', `${PROV[p].name} isn’t answering. Check your connection, then tap Ask now.`);
+      }
+      return;
+    }
     if (e.name === 'AbortError'){ bill(p, meter, handled ? 'dup' : 'aborted'); return; }
     if (meter.open) bill(p, meter, 'errors'); else { usage.errors++; saveUsage(); renderStats(); }
     const r = errInfo(p, e);
@@ -932,6 +952,7 @@ async function ask(force, sig){
     say(r.kind, r.text);
     if (entry){ entry.raw += '\n\n(cut off)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
   } finally {
+    clearInterval(watch);
     st.inflight.delete(ctrl);
   }
 }
