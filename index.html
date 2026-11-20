@@ -5,178 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#03060E">
 <title>Live Answer</title>
 <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
+/* Live Answer 4: night-screening theme. Deep blue-black stage, glass panels, one beam of cyan light on the answer. */
 :root{
-  --paper:#E4EEDD; --grid:rgba(60,110,70,.13); --ink:#1D2A48; --pencil:#566A7C;
-  --hi:#F2E15A; --hi-ink:#1D2A48; --err:#B3362B; --bar:#EEF4E9; --line:#BFD2B5; --field:#F6FAF3;
-  --same:#2E8B57; --same-ink:#FFFFFF;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --paper:#111915; --grid:rgba(150,200,160,.07); --ink:#E2ECE3; --pencil:#93A89C;
-    --hi:#D8C53E; --hi-ink:#121810; --err:#F07A6B; --bar:#0C120F; --line:#26352D; --field:#18221D;
-    --same:#5FD08A; --same-ink:#0F1A12;
-    color-scheme: dark;
-  }
+  --void:#03060E; --deep:#0A1838; --stage:#06102A;
+  --beam:#3D8BFF; --glow:#7FE7FF; --ink:#EAF2FF; --muted:#8FA6CC; --faint:#5C719A;
+  --line:rgba(127,170,255,.16); --line2:rgba(127,170,255,.28);
+  --glass:rgba(14,28,62,.55); --glass2:rgba(22,42,90,.5); --field:rgba(8,18,44,.8);
+  --ok:#43E2A6; --warn:#FFB74D; --err:#FF6B86;
+  --display:"Bricolage Grotesque","Atkinson Hyperlegible Next",-apple-system,system-ui,sans-serif;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none !important}
 html,body{height:100%;margin:0}
-body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",-apple-system,system-ui,"Segoe UI",sans-serif;font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{color:var(--ink);font-family:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",-apple-system,system-ui,"Segoe UI",sans-serif;font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overscroll-behavior:none;
+  background:radial-gradient(1100px 520px at 50% -8%,rgba(61,139,255,.30),transparent 62%),radial-gradient(700px 480px at 110% 105%,rgba(127,231,255,.10),transparent 60%),linear-gradient(180deg,#050A18 0%,var(--void) 70%);background-attachment:fixed}
+/* film grain and vignette, above everything but never in the way */
+body::after{content:"";position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{content:"";position:fixed;inset:0;z-index:49;pointer-events:none;box-shadow:inset 0 0 140px rgba(0,0,0,.65)}
 .app{position:relative;display:flex;flex-direction:column;height:100%}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 
 /* Viewfinder */
-.vf{position:relative;flex:0 0 50%;background:#000;overflow:hidden;touch-action:manipulation}
+.vf{position:relative;flex:0 0 46%;background:#000;overflow:hidden;touch-action:manipulation}
+.vf::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46px;pointer-events:none;background:linear-gradient(transparent,rgba(3,6,14,.9))}
 .vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:50% 50%}
-.crop{position:absolute;border:2px dashed rgba(255,255,255,.85);border-radius:10px;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
-.status{display:flex;flex:1;align-items:center;gap:8px;min-width:0;color:var(--pencil);font-size:.88rem;font-weight:600}
-.status #statusText{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
-@media (orientation:portrait){.app[data-cam=small] .sheethead{flex-wrap:wrap;row-gap:6px}.app[data-cam=small] .status{order:5;flex-basis:100%}}
-.dot{width:9px;height:9px;border-radius:50%;background:#9FB3A8;flex:none;box-shadow:0 0 0 1.5px rgba(0,0,0,.18)}
-.status[data-kind=moving] .dot,.status[data-kind=warn] .dot{background:#F0B44C}
-.status[data-kind=asking] .dot{background:#F2E15A;animation:pulse 1s ease-in-out infinite}
-.status[data-kind=ok] .dot{background:#5FD08A}
-.status[data-kind=err] .dot{background:#F07A6B}
-@keyframes pulse{50%{opacity:.25}}
-.lenses{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;padding:5px;border-radius:999px;background:rgba(0,0,0,.5)}
-.lenses button{min-width:44px;height:44px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#fff;font:inherit;font-size:.9rem;font-weight:700}
-.lenses button[aria-pressed=true]{background:#F2E15A;color:#121810}
-.start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;background:#000}
-.start p{margin:0;max-width:30ch;color:#D8E3DB}
-.start .hint{color:#F0B44C;font-size:.9rem}
-.start .btn.primary{flex:none;padding:0 28px;background:#F2E15A;border-color:#F2E15A;color:#121810}
+.crop{position:absolute;z-index:2;border:1.5px solid var(--glow);border-radius:10px;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.45),0 0 22px rgba(127,231,255,.35)}
+.vbtn{position:absolute;z-index:3;min-width:44px;height:40px;padding:0 14px;border:1px solid var(--line2);border-radius:999px;background:rgba(6,14,34,.62);color:var(--ink);font:inherit;font-size:.86rem;font-weight:700;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-variant-numeric:tabular-nums}
+.vbtn.area{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px}
+.vbtn.area[aria-pressed=true]{border-color:var(--glow);color:var(--glow);box-shadow:0 0 16px rgba(127,231,255,.35)}
+.vbtn.zoom{right:12px;bottom:16px}
+.zoompanel{position:absolute;z-index:3;left:12px;right:12px;bottom:64px;padding:10px 12px;border:1px solid var(--line2);border-radius:16px;background:rgba(6,14,34,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.zoompanel input{width:100%;accent-color:var(--beam)}
+.zpresets{display:flex;gap:6px;margin-top:6px}
+.zpresets button{flex:1;min-height:40px;border:0;border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:.86rem;font-weight:700}
+.zpresets button[aria-pressed=true]{background:linear-gradient(135deg,#2F6BFF,var(--beam));box-shadow:0 0 14px rgba(61,139,255,.5)}
+.lenses{position:absolute;z-index:3;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border:1px solid var(--line2);border-radius:999px;background:rgba(6,14,34,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.lenses button{min-width:44px;height:40px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:.88rem;font-weight:700}
+.lenses button[aria-pressed=true]{background:linear-gradient(135deg,#2F6BFF,var(--beam))}
+.lenses.dim{opacity:0;pointer-events:none}
+.drawlayer{position:absolute;inset:0;z-index:4;cursor:crosshair;touch-action:none;background:rgba(0,0,0,.3)}
+.drawbox{position:absolute;border:1.5px solid var(--glow);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.45),0 0 22px rgba(127,231,255,.4);pointer-events:none}
+.drawbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border:1px solid var(--line2);border-radius:999px;background:rgba(6,14,34,.82);color:var(--ink);font-size:.86rem;font-weight:600}
+.drawbar span{flex:1}
+.drawbar button{min-height:40px;padding:0 12px;border:0;border-radius:999px;background:rgba(127,170,255,.16);color:var(--ink);font:inherit;font-weight:700}
+.start{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;
+  background:radial-gradient(600px 300px at 50% 0%,rgba(61,139,255,.35),transparent 70%),#02040B}
+.start .mark{margin:0;font-family:var(--display);font-size:2.4rem;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);text-shadow:0 0 34px rgba(61,139,255,.55)}
+.start p{margin:0;max-width:30ch;color:var(--muted)}
+.start .hint{color:var(--warn);font-size:.9rem}
+.start .btn.primary{flex:none;padding:0 30px}
 
-/* Answer sheet: engineering-pad grid */
-.sheet{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 20px 8px;background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;background-position:-1px -1px}
-.qline{margin:0 0 10px;font-size:.95rem;color:var(--pencil);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.sheethead{position:sticky;top:-18px;z-index:3;display:flex;align-items:center;gap:6px;margin:-18px -20px 14px;padding:8px 12px 8px 20px;background:var(--paper);border-bottom:1px solid var(--line)}
-.tool{flex:none;min-width:44px;min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;font-size:.86rem;font-weight:700}
-.app[data-cam=small] .vf{position:absolute;z-index:4;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;width:96px;height:60px;flex:none;border-radius:10px;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+/* Header */
+.sheet{--fs:1;flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px 10px}
+.sheethead{position:sticky;top:-18px;z-index:6;display:flex;align-items:center;gap:6px;margin:-18px -18px 16px;padding:8px 12px 8px 18px;
+  background:rgba(4,9,22,.72);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid var(--line)}
+.sheethead::after{content:"";position:absolute;left:18px;right:18px;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(127,231,255,.5),transparent)}
+.status{display:flex;flex:1;align-items:center;gap:9px;min-width:0;color:var(--muted);font-size:.88rem;font-weight:600}
+.status #statusText{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.status[data-kind=moving] .dot,.status[data-kind=warn] .dot{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.status[data-kind=asking] .dot{background:var(--glow);box-shadow:0 0 12px var(--glow);animation:pulse 1s ease-in-out infinite}
+.status[data-kind=ok] .dot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.status[data-kind=err] .dot{background:var(--err);box-shadow:0 0 10px var(--err)}
+@keyframes pulse{50%{opacity:.3}}
+.tool{flex:none;min-width:44px;min-height:40px;padding:0 11px;border:1px solid var(--line2);border-radius:12px;background:var(--glass);color:var(--ink);font:inherit;font-size:.86rem;font-weight:700}
+@media (orientation:portrait){.app[data-cam=small] .sheethead{flex-wrap:wrap;row-gap:6px}.app[data-cam=small] .status{order:5;flex-basis:100%}}
+.app[data-cam=small] .vf{position:absolute;z-index:7;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;width:96px;height:60px;flex:none;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px rgba(127,231,255,.4),0 0 22px rgba(61,139,255,.4)}
 .app[data-cam=small] .vf > :not(video){display:none !important}
+.app[data-cam=small] .vf::after{display:none}
 .app[data-cam=small] .sheet{padding-top:calc(env(safe-area-inset-top,0px) + 18px)}
 .app[data-cam=small] .sheethead{top:calc(-18px - env(safe-area-inset-top,0px));margin-top:calc(-18px - env(safe-area-inset-top,0px));padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px 120px;min-height:calc(env(safe-area-inset-top,0px) + 76px)}
-.q{background-image:linear-gradient(var(--hi),var(--hi));background-repeat:no-repeat;background-position:left center;background-size:0% 100%;-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:1px 2px;border-radius:2px}
-.q.fresh{animation:mark 1.7s ease-in-out}
-@keyframes mark{
-  0%{background-size:0% 100%;background-position:left center;color:var(--pencil)}
-  30%{background-size:100% 100%;background-position:left center;color:var(--hi-ink)}
-  75%{background-size:100% 100%;background-position:right center;color:var(--hi-ink)}
-  100%{background-size:0% 100%;background-position:right center;color:var(--pencil)}
-}
-.sheet{--fs:1}
-.ans{margin:0 0 6px}
-.final{margin:0 0 8px;font-size:calc(1.9rem * var(--fs));line-height:1.22;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
-.final mark{color:inherit;background:linear-gradient(transparent 55%,var(--hi) 55%,var(--hi) 90%,transparent 90%);padding:0 .06em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.final.mc{display:flex;align-items:center;gap:.4em}
-.opt{flex:none;display:inline-grid;place-items:center;width:1.55em;height:1.55em;border-radius:.4em;background:var(--hi);color:var(--hi-ink);font-size:1.05em}
-.final.part{font-size:calc(1.3rem * var(--fs))}
-.prov .final{color:var(--pencil)}
+
+/* The question, then the answer as a title card */
+.qline{margin:0 0 12px;font-size:.95rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.q.fresh{animation:qglow 1.4s ease-out}
+@keyframes qglow{0%{color:var(--glow);text-shadow:0 0 18px rgba(127,231,255,.7)}100%{color:var(--muted);text-shadow:none}}
+#aBody{position:relative}
+.ans{position:relative;margin:0 0 10px;padding:18px 18px 12px;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(29,62,150,.34),rgba(8,18,46,.5) 60%);box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+.ans::before{content:"";position:absolute;left:10%;right:10%;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--glow),transparent);opacity:.8}
+#aBody.enter .ans::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:40%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(127,231,255,.16),rgba(255,255,255,.22),rgba(127,231,255,.16),transparent);animation:sweep 1.1s ease-out forwards}
+@keyframes sweep{to{left:120%}}
+#aBody.enter{animation:enter .28s ease-out}
+@keyframes enter{from{opacity:0;transform:translateY(10px) scale(.99)}}
+.final{margin:0 0 8px;font-family:var(--display);font-size:calc(2.05rem * var(--fs));line-height:1.15;font-weight:750;letter-spacing:-.02em;color:#F5F9FF;overflow-wrap:anywhere;text-shadow:0 0 28px rgba(61,139,255,.35)}
+.final mark{color:inherit;background:linear-gradient(transparent 80%,rgba(61,139,255,.75) 80%,rgba(127,231,255,.75) 93%,transparent 93%);padding:0 .04em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.final.mc{display:flex;align-items:center;gap:.45em}
+.opt,.final.rank .num{flex:none;display:inline-grid;place-items:center;border-radius:.42em;color:#031027;font-weight:800;
+  background:radial-gradient(circle at 30% 25%,#BFF6FF,var(--glow) 35%,var(--beam));box-shadow:0 0 22px rgba(61,139,255,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+.opt{width:1.55em;height:1.55em;font-size:1.02em}
+.final.part{font-size:calc(1.35rem * var(--fs))}
+.final.rank{display:flex;align-items:baseline;gap:.55em;margin:0 0 8px;font-size:calc(1.45rem * var(--fs))}
+.final.rank .num{min-width:1.45em;height:1.45em;font-size:.8em}
+.prov .final{color:var(--muted);text-shadow:none}
 .prov .final mark{background:none}
-.prov .opt{background:transparent;color:var(--pencil);box-shadow:inset 0 0 0 2px var(--pencil)}
-.chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;font-size:.86rem;color:var(--pencil);overflow-wrap:anywhere}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--field);color:var(--ink);font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums}
-.chip.ok{background:var(--same);color:var(--same-ink);border-color:transparent}
-.chip.diff{background:var(--hi);color:var(--hi-ink);border-color:transparent}
-.chip.wait .dot{background:var(--hi);animation:pulse 1s ease-in-out infinite}
-.workbox{margin:6px 0 12px;border-top:1px dashed var(--line)}
-.workbox summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:var(--pencil);font-size:.92rem;font-weight:600;list-style:none}
+.prov .opt,.prov .final.rank .num{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--muted)}
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 12px;font-size:.86rem;color:var(--muted);overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border:1px solid var(--line2);border-radius:999px;background:rgba(127,170,255,.08);color:#CFE0FF;font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums}
+.chip.ok{background:rgba(67,226,166,.12);border-color:rgba(67,226,166,.45);color:#9AF5CF}
+.chip.diff{background:rgba(255,183,77,.12);border-color:rgba(255,183,77,.5);color:#FFD08F}
+.chip.muted{color:var(--faint);border-color:var(--line)}
+.chip.wait .dot{background:var(--glow);box-shadow:0 0 10px var(--glow);animation:pulse 1s ease-in-out infinite}
+.workbox{margin:4px 0 2px;border-top:1px solid var(--line)}
+.workbox summary{display:flex;align-items:center;gap:8px;min-height:42px;cursor:pointer;color:var(--muted);font-size:.9rem;font-weight:600;list-style:none}
 .workbox summary::-webkit-details-marker{display:none}
 .workbox summary::after{content:"";width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
 .workbox[open] summary::after{transform:rotate(225deg);margin-top:3px}
-#aBody.enter{animation:enter .22s ease-out}
-@keyframes enter{from{opacity:0;transform:translateY(8px)}}
-.work{margin:0 0 8px;font-size:calc(1.05rem * var(--fs));line-height:1.55;overflow-wrap:anywhere}
-.empty{margin:0;color:var(--pencil);max-width:34ch}
-.meta{margin:4px 0 0;font-size:.82rem;color:var(--pencil);font-variant-numeric:tabular-nums}
+.work{margin:0 0 8px;font-size:calc(1.02rem * var(--fs));line-height:1.6;color:#D6E3FA;overflow-wrap:anywhere}
+.empty{margin:0;color:var(--muted);max-width:34ch}
+.meta{margin:4px 0 8px;font-size:.8rem;color:var(--faint);font-variant-numeric:tabular-nums}
 .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0}
-.alt{margin:16px 0 0;padding:12px 14px;border:1px dashed var(--line);border-radius:10px;background:var(--field)}
-.alt-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 8px;font-size:.85rem;color:var(--pencil)}
-.alt .final{font-size:1.2rem}
-.alt .work{font-size:.98rem}
+.alt{margin:14px 0 0;padding:12px 14px;border:1px dashed var(--line2);border-radius:14px;background:var(--glass)}
+.alt .ans{padding:12px;background:transparent;box-shadow:none}
+.alt-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 8px;font-size:.85rem;color:var(--muted)}
+.alt .final{font-size:1.25rem}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700}
-.badge.same{background:var(--same);color:var(--same-ink)}
-.badge.diff{background:var(--hi);color:var(--hi-ink)}
-.earlier{margin-top:22px;padding-top:12px;border-top:1px solid var(--line)}
-.earlier h2{margin:0 0 8px;font-size:.85rem;font-weight:600;color:var(--pencil)}
-.earlier button{display:flex;align-items:baseline;gap:12px;width:100%;text-align:left;margin:0 0 6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:.92rem}
-.eq{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pencil)}
-.ea{flex:none;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.badge.same{background:rgba(67,226,166,.16);color:#9AF5CF}
+.badge.diff{background:rgba(255,183,77,.16);color:#FFD08F}
+
+/* Follow-up questions about the same view */
+.follow{display:flex;gap:8px;margin:12px 0 4px}
+.follow input{flex:1;min-width:0;min-height:46px;padding:0 14px;border:1px solid var(--line2);border-radius:14px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+.follow input::placeholder{color:var(--faint)}
+.follow button{flex:none;min-height:46px;padding:0 16px;border:0;border-radius:14px;background:linear-gradient(135deg,#2F6BFF,var(--beam));color:#fff;font:inherit;font-weight:700;box-shadow:0 0 18px rgba(61,139,255,.35)}
+.fthread{margin:6px 0 0}
+.fq{margin:12px 0 4px;color:var(--glow);font-weight:700;font-size:.95rem}
+.fa{margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--glass);color:#D6E3FA;font-size:calc(1.02rem * var(--fs));line-height:1.55;overflow-wrap:anywhere}
+
+/* Earlier answers */
+.earlier{margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
+.earlier h2{margin:0 0 10px;font-family:var(--display);font-size:1rem;font-weight:700;letter-spacing:-.01em;color:var(--muted)}
+.earlier button{display:flex;align-items:baseline;gap:12px;width:100%;text-align:left;margin:0 0 8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--glass);color:var(--ink);font:inherit;font-size:.92rem;transition:border-color .15s,box-shadow .15s}
+.earlier button:hover{border-color:var(--line2);box-shadow:0 0 18px rgba(61,139,255,.18)}
+.eq{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.ea{flex:none;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;color:#CFEFFF}
 
 /* Bottom controls */
-.stats{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;width:100%;margin:0;padding:6px 20px;border:0;border-top:1px solid var(--line);font:inherit;font-size:.8rem;color:var(--pencil);background:var(--bar);font-variant-numeric:tabular-nums;text-align:left}
-.stats .warnText{color:var(--err);font-weight:600}
-.bar{display:flex;gap:8px;padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 10px);background:var(--bar)}
-button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.btn{flex:1;min-height:50px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font:inherit;font-weight:600}
-.btn.primary{flex:1.5;background:var(--ink);border-color:var(--ink);color:var(--paper)}
-:focus-visible{outline:3px solid #4C8DF0;outline-offset:2px}
+.stats{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;width:100%;margin:0;padding:8px 18px;border:0;border-top:1px solid var(--line);font:inherit;font-size:.8rem;color:var(--muted);background:rgba(4,9,22,.8);font-variant-numeric:tabular-nums;text-align:left}
+.stats #statTime{color:var(--glow);font-weight:700}
+.stats #statTime.warnText{color:var(--warn)}
+.stats .warnText{color:var(--warn);font-weight:700}
+.bar{display:flex;gap:8px;padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 10px);background:rgba(4,9,22,.8)}
+.btn{flex:1;min-height:52px;padding:0 12px;border:1px solid var(--line2);border-radius:16px;background:var(--glass);color:var(--ink);font:inherit;font-weight:700}
+.btn.primary{flex:1.5;border:0;color:#fff;background:linear-gradient(135deg,#2558F0,#3D8BFF 55%,#5FB6FF);box-shadow:0 0 26px rgba(61,139,255,.45),inset 0 1px 0 rgba(255,255,255,.25)}
 
-/* Settings sheet */
-dialog{width:100%;max-width:560px;max-height:88dvh;margin:auto auto 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 18px);border:0;border-radius:18px 18px 0 0;background:var(--paper);color:var(--ink);overflow-y:auto}
-dialog::backdrop{background:rgba(0,0,0,.55)}
-dialog h2{margin:0 0 14px;font-size:1.25rem}
+/* Settings */
+dialog{width:100%;max-width:560px;max-height:88dvh;margin:auto auto 0;padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 18px);border:1px solid var(--line2);border-bottom:0;border-radius:22px 22px 0 0;color:var(--ink);overflow-y:auto;
+  background:linear-gradient(180deg,rgba(14,30,70,.97),rgba(4,9,22,.98))}
+dialog::backdrop{background:rgba(1,3,10,.7);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+dialog h2{margin:0 0 16px;font-family:var(--display);font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
 dialog h3{margin:0 0 8px;font-size:1rem}
 .field{display:block;margin:0 0 18px;border:0;padding:0;min-width:0}
-.field>span,.field legend{display:block;margin-bottom:6px;font-weight:600;font-size:.95rem;padding:0}
-.field small,.note{display:block;margin-top:6px;color:var(--pencil);font-size:.82rem}
+.field>span,.field legend{display:block;margin-bottom:7px;font-weight:700;font-size:.95rem;padding:0}
+.field small,.note{display:block;margin-top:6px;color:var(--muted);font-size:.82rem}
 .row{display:flex;gap:8px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row2 label>span{display:block;margin-bottom:4px;font-size:.85rem;color:var(--pencil)}
+.row2.gap{margin-top:10px}
+.row2 label>span{display:block;margin-bottom:4px;font-size:.85rem;color:var(--muted)}
 .keyrow{margin:0 0 10px}
-.keyrow label>span{display:block;margin-bottom:4px;font-size:.88rem;font-weight:600}
-input[type=password],input[type=text],input[type=number],select{width:100%;min-width:0;min-height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
-.row button,.plain{flex:none;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:600}
+.keyrow label>span{display:block;margin-bottom:4px;font-size:.88rem;font-weight:700}
+input[type=password],input[type=text],input[type=number],select{width:100%;min-width:0;min-height:46px;padding:0 12px;border:1px solid var(--line2);border-radius:12px;background:var(--field);color:var(--ink);font:inherit;font-size:16px}
+select option{background:#0A1838;color:var(--ink)}
+.row button,.plain{flex:none;min-height:44px;padding:0 14px;border:1px solid var(--line2);border-radius:12px;background:var(--glass);color:var(--ink);font:inherit;font-weight:700}
+.row .btn.primary{flex:1}
 .check{display:flex;gap:10px;align-items:flex-start;margin:0 0 16px;font-size:.95rem}
-.check input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--ink)}
+.check input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--beam)}
 .seg{display:flex;gap:6px}
 .seg label{flex:1;position:relative}
 .seg input{position:absolute;opacity:0;pointer-events:none}
-.seg span{display:block;text-align:center;padding:11px 6px;border:1px solid var(--line);border-radius:10px;font-weight:600;font-size:.9rem}
-.seg input:checked+span{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.seg input:focus-visible+span{outline:3px solid #4C8DF0;outline-offset:2px}
+.seg span{display:block;text-align:center;padding:11px 6px;border:1px solid var(--line2);border-radius:12px;font-weight:700;font-size:.9rem;background:var(--field)}
+.seg.four span{padding:11px 2px;font-size:.86rem}
+.seg input:checked+span{border-color:transparent;color:#fff;background:linear-gradient(135deg,#2558F0,var(--beam));box-shadow:0 0 16px rgba(61,139,255,.4)}
+.seg input:focus-visible+span{outline:2px solid var(--glow);outline-offset:2px}
 .keystate{min-height:1.2em}
 .keystate.bad{color:var(--err)}
-.usage{margin:0 0 20px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
-.usage table{width:100%;border-collapse:collapse;font-size:.92rem}
-.usage td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.usage{margin:0 0 20px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--glass)}
+.usage table{width:100%;border-collapse:collapse;font-size:.9rem}
+.usage td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted)}
 .usage tr:last-child td{border-bottom:0}
-.usage td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;padding-left:12px}
+.usage td:last-child{text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;padding-left:12px}
 .usage .plain{margin-top:10px}
-.lim{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px}
-.lim legend{padding:0 4px;font-weight:600;font-size:.92rem}
-.version{margin-top:14px;color:var(--pencil);font-size:.8rem}
-.seg.four span{padding:11px 2px;font-size:.86rem}
-.checking{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:.88rem;color:var(--pencil)}
-.checking .dot{background:var(--hi);animation:pulse 1s ease-in-out infinite}
-.qdiff{margin:8px 0 0;font-size:.9rem;color:var(--pencil);overflow-wrap:anywhere}
-.qdiff .badge{margin-right:6px}
-.prov .final{color:var(--pencil)}
-.row2.gap{margin-top:10px}
-.vbtn{position:absolute;min-width:44px;height:40px;padding:0 13px;border:0;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:.86rem;font-weight:700;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-variant-numeric:tabular-nums}
-.vbtn.area{top:calc(env(safe-area-inset-top,0px) + 8px);right:12px}
-.vbtn.area[aria-pressed=true]{background:#F2E15A;color:#121810}
-.vbtn.zoom{right:12px;bottom:14px}
-.zoompanel{position:absolute;left:12px;right:12px;bottom:62px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.66);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.zoompanel input{width:100%;accent-color:#F2E15A}
-.zpresets{display:flex;gap:6px;margin-top:6px}
-.zpresets button{flex:1;min-height:40px;border:0;border-radius:999px;background:transparent;color:#fff;font:inherit;font-size:.86rem;font-weight:700}
-.zpresets button[aria-pressed=true]{background:#F2E15A;color:#121810}
-.lenses.dim{opacity:0;pointer-events:none}
-.drawlayer{position:absolute;inset:0;cursor:crosshair;touch-action:none;background:rgba(0,0,0,.25)}
-.drawbox{position:absolute;border:2px solid #F2E15A;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.4);pointer-events:none}
-.drawbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-size:.86rem;font-weight:600}
-.drawbar span{flex:1}
-.drawbar button{min-height:40px;padding:0 12px;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700}
+.lim{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:14px}
+.lim legend{padding:0 4px;font-weight:700;font-size:.92rem}
+.version{margin-top:14px;color:var(--faint);font-size:.8rem}
+
 @media (orientation:landscape) and (max-height:540px){
   .app{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) auto auto}
   .app[data-cam=small]{grid-template-columns:minmax(0,1fr)}
@@ -184,15 +210,16 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   .app[data-cam=small] .vf{grid-row:auto;height:60px;left:calc(env(safe-area-inset-left,0px) + 12px)}
   .app[data-cam=small] .sheet{padding-left:calc(env(safe-area-inset-left,0px) + 16px)}
   .vf{grid-column:1;grid-row:1 / span 3;height:100%}
+  .vf::after{display:none}
   .sheet{grid-column:2;grid-row:1;padding:12px calc(env(safe-area-inset-right,0px) + 16px) 6px 16px}
   .stats{grid-column:2;grid-row:2;padding-right:calc(env(safe-area-inset-right,0px) + 16px)}
   .bar{grid-column:2;grid-row:3;padding:6px calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 6px) 10px}
   .btn{min-height:44px}
-  .final{font-size:calc(1.6rem * var(--fs))}
+  .final{font-size:calc(1.7rem * var(--fs))}
   .sheethead{top:-12px;margin:-12px calc(-16px - env(safe-area-inset-right,0px)) 12px -16px;padding-left:16px;padding-right:calc(env(safe-area-inset-right,0px) + 12px)}
   dialog{max-height:92dvh}
 }
-@media (prefers-reduced-motion:reduce){.q.fresh,#aBody.enter{animation:none}.status[data-kind=asking] .dot,.checking .dot,.chip.wait .dot{animation:none}}
+@media (prefers-reduced-motion:reduce){.q.fresh,#aBody.enter,#aBody.enter .ans::after{animation:none}#aBody.enter .ans::after{display:none}.status[data-kind=asking] .dot,.chip.wait .dot{animation:none}}
 </style>
 </head>
 <body>
@@ -212,7 +239,8 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
     </div>
     <div class="lenses" id="lenses" hidden></div>
     <div class="start" id="startPanel">
-      <p>Point the camera at a question and hold still. The answer prints below.</p>
+      <p class="mark">Live Answer</p>
+      <p>Point the camera at a question, a page or a screen. Answers appear below as soon as the view holds still.</p>
       <button class="btn primary" id="startBtn" type="button">Start camera</button>
       <p class="hint" id="startHint"></p>
     </div>
@@ -228,6 +256,8 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
     <div id="card" aria-live="polite">
     <p class="qline"><span class="q" id="qLine"></span></p>
     <div id="aBody"><p class="empty">No answer yet. Start the camera, add a key in Settings, then aim at any question.</p></div>
+    <div class="follow" id="followWrap" hidden><input id="followInput" type="text" placeholder="Ask about this view, like “explain step 2”" enterkeyhint="send" autocomplete="off" aria-label="Follow-up question about this view"><button type="button" id="followSend">Ask</button></div>
+    <div class="fthread" id="followThread" aria-live="polite"></div>
     </div>
     <div class="earlier" id="earlierWrap" hidden>
       <h2>Earlier</h2>
@@ -236,7 +266,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </section>
 
   <button class="stats" id="stats" type="button" aria-label="Today’s usage, open details">
-    <span id="statCalls">0 calls today</span><span id="statTokens">0 tokens</span><span id="statSaved">0 reused free</span>
+    <span id="statTime">Time left: working it out</span><span id="statCalls">0 calls today</span><span id="statTokens">0 tokens</span><span id="statSaved">0 reused free</span>
   </button>
   <nav class="bar">
     <button class="btn" id="pauseBtn" type="button">Pause</button>
@@ -305,10 +335,12 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
       <label><input type="radio" name="depth" value="medium"><span>Medium</span></label>
       <label><input type="radio" name="depth" value="high"><span>Full</span></label>
     </div>
-    <small>More thinking is slower but better on puzzles and multi-step problems. Full is the old Think harder. Light and Medium only apply to Gemini; other providers treat them like Full.</small>
+    <small>Light is the default: fast, and nearly as accurate as Full on most questions. Full is slower but best on puzzles and long calculations. Light and Medium only apply to Gemini; other providers treat them like Full.</small>
   </fieldset>
 
-  <label class="check"><input type="checkbox" id="quickInput"><span>Quick answer first. While the model thinks, a fast answer without thinking appears, then the thinking answer replaces it. Uses 2 calls per new question.</span></label>
+  <label class="check"><input type="checkbox" id="checkInput"><span>Double-check hard questions with Full thinking. Only questions the model marks as hard, or whose sums don’t add up, use a second call, and only when your calls allow it.</span></label>
+
+  <label class="field"><span>Daily goal, hours of use</span><input type="number" id="goalInput" inputmode="decimal" min="0" max="16" step="0.5"><small>The bottom bar estimates how long today’s free calls will last at your pace. If you’re behind your goal, the app skips double-checks to save calls.</small></label>
 
   <label class="field">
     <span>Image sent to the model</span>
@@ -338,7 +370,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 3.7</p>
+  <p class="version">Version 4.0</p>
 </dialog>
 
 <script>
@@ -367,7 +399,7 @@ const STORE = 'liveanswer.v3', OLD = 'liveanswer.v1', USTORE = 'liveanswer.usage
 function defaults(){
   const keys = {}, models = {}, limits = {};
   IDS.forEach(p => { keys[p] = ''; models[p] = PROV[p].model; limits[p] = { cap:PROV[p].cap, rpm:PROV[p].rpm, pin:PROV[p].pin, pout:PROV[p].pout }; });
-  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, depth:'', quick:false, backups:[], zoom:1, area:null, camSize:'big', fs:1, showWork:false, img:1024, crop:false, sens:'normal', deviceId:'' };
+  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, depth:'', quick:false, backups:[], zoom:1, area:null, camSize:'big', fs:1, showWork:false, check:true, goal:2, img:1024, crop:false, sens:'normal', deviceId:'' };
 }
 let cfg = defaults();
 (function load(){
@@ -396,6 +428,8 @@ const thinks = lv => !!lv && lv !== 'minimal';
 if (cfg.crop && !cfg.area){ cfg.area = { x:0.15, y:0.15, w:0.7, h:0.7 }; }   // the old center box
 cfg.crop = false;
 if (!Array.isArray(cfg.backups)) cfg.backups = [];
+// Version 4: Light thinking by default, Full only to double-check hard questions
+if (!cfg.v4){ cfg.depth = 'low'; cfg.check = true; cfg.quick = false; if (!(Number(cfg.goal) > 0)) cfg.goal = 2; cfg.v4 = true; }
 function levelLabel(p, lv){
   if (lv === '') return 'default thinking';
   if (!thinks(lv)) return 'no thinking';
@@ -411,7 +445,7 @@ const TICK_MS = 150, MIN_GAP = 1200, MAX_INFLIGHT = 2, FINE_EVERY = 300, W = 80,
 const st = {
   stream:null, timer:null, paused:false, prev:null, anchor:null, stableSince:0, checked:false,
   lastCall:-1e9, backoff:{}, recent:{}, ctrl:null, altCtrls:new Set(), current:null, history:[],
-  noThink:new Set(), badLevel:{}, quickCtrls:new Set(), fine:null, fpend:null, lastFine:0, hwZoom:null, hi:false, wake:null, kind:'off', lastIn:{}, inflight:new Set(), seq:0, shownSeq:0
+  noThink:new Set(), badLevel:{}, quickCtrls:new Set(), checkCtrls:new Set(), bucket:{}, slow:{}, lastTickT:0, fine:null, fpend:null, lastFine:0, hwZoom:null, hi:false, wake:null, kind:'off', lastIn:{}, inflight:new Set(), seq:0, shownSeq:0
 };
 
 /* ---------- Usage tracking (per Pacific day, saved on the phone) ---------- */
@@ -420,7 +454,7 @@ function pacificDay(){
   catch (e) { return new Date().toISOString().slice(0, 10); }
 }
 function blankBy(){ const b = {}; IDS.forEach(p => { b[p] = { calls:0, inTok:0, outTok:0, answered:0 }; }); return b; }
-function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, quick:0, qSame:0, qDiff:0, models:{}, out:{},
+function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, quick:0, qSame:0, qDiff:0, checks:0, cSame:0, cDiff:0, calcOk:0, calcBad:0, follow:0, activeSec:0, models:{}, out:{},
            qFirstSum:0, qN:0, firstSum:0, doneSum:0, tN:0, inTok:0, outTok:0, estTok:0, by:blankBy() }; }
 let usage = blankUsage();
 try {
@@ -462,6 +496,9 @@ function bill(p, m, kind){
 function setStatus(kind, text){ st.kind = kind; $('status').dataset.kind = kind; $('statusText').textContent = text; }
 function renderStats(){
   rollDay();
+  const tl = $('statTime');
+  tl.textContent = `≈${fmtH(hoursLeft())} left today`;
+  tl.className = saving() ? 'warnText' : '';
   const p = cfg.prov, k = mkey(p, cfg.models[p]), cap = cfg.limits[p].cap, used = usage.models[k] || 0;
   const c = $('statCalls');
   if (usage.out[k] || used >= cap){
@@ -477,7 +514,7 @@ function renderStats(){
   if (dlg.open) renderUsage();
 }
 function renderUsage(){
-  const own = usage.calls - usage.alt - (usage.quick || 0);
+  const own = usage.calls - usage.alt - (usage.checks || 0) - (usage.follow || 0);
   const wasted = usage.dup + usage.none + usage.blurry + usage.aborted;
   const pct = own > 0 ? Math.round(100 * wasted / own) : 0;
   const rows = [
@@ -490,17 +527,21 @@ function renderUsage(){
     ['Stopped early', usage.aborted],
     ['Errors', usage.errors],
     ['Second-opinion calls', usage.alt],
-    ['Quick-answer calls', usage.quick || 0],
+    ['Full double-checks', usage.checks || 0],
+    ['Follow-up questions', usage.follow || 0],
     ['Main calls without a new answer', `${pct}%`],
     ['Input tokens', kfmt(usage.inTok)],
     ['Output tokens, incl. thinking', kfmt(usage.outTok)],
     ['Cost if on paid keys', money(cost())]
   ];
   const sec = ms => (ms / 1000).toFixed(1) + ' s';
-  if (usage.qN) rows.push(['Average wait for the quick answer', sec(usage.qFirstSum / usage.qN)]);
-  if (usage.tN) rows.push([usage.qN ? 'Average wait for the thinking answer' : 'Average wait for the answer',
-    `${sec(usage.firstSum / usage.tN)} first words, ${sec(usage.doneSum / usage.tN)} finished`]);
-  if (usage.qSame + usage.qDiff) rows.push(['Quick answer matched the thinking answer', `${usage.qSame} of ${usage.qSame + usage.qDiff}`]);
+  if (usage.tN) rows.push(['Average wait for the answer', `${sec(usage.firstSum / usage.tN)} first words, ${sec(usage.doneSum / usage.tN)} finished`]);
+  if (usage.cSame + usage.cDiff) rows.push(['Full thinking agreed with Light', `${usage.cSame} of ${usage.cSame + usage.cDiff}`]);
+  if (usage.calcOk + usage.calcBad) rows.push(['Answers whose sums checked out', `${usage.calcOk} of ${usage.calcOk + usage.calcBad}`]);
+  rows.push(['Active time today', fmtH((usage.activeSec || 0) / 3600)]);
+  rows.push(['Calls per active hour', String(Math.round(callRate()))]);
+  rows.push(['Calls left today, all models', String(callsLeft())]);
+  rows.push(['Estimated time left', fmtH(hoursLeft()) + (saving() ? ', saving calls' : '')]);
   Object.keys(usage.models).forEach(k => {
     const i = k.indexOf(':'), p = k.slice(0, i), m = k.slice(i + 1);
     if (PROV[p] && usage.models[k]) rows.push([`${PROV[p].name} ${shortModel(m)}`, `${usage.models[k]} of ${cfg.limits[p].cap} calls${usage.out[k] ? ', free limit used up' : ''}`]);
@@ -522,18 +563,58 @@ function renderUsage(){
 /* ---------- Call gate: daily cap, per-minute pace, backoff, per model ---------- */
 // Google's free limits are per model, so each model is counted and paced on its own.
 // Returns null if a call may go now, '' to wait silently, or a message to show.
+// Calls are spread out instead of fired in bursts: each model has a small bucket of calls that refills
+// at its per-minute rate, so you never wait out a long pause after a quick run of pages.
+function rpmOf(p, k){
+  const base = Number(cfg.limits[p].rpm) || 10, s = st.slow[k];
+  return s && performance.now() < s.until ? Math.max(1, Math.floor(base * s.scale)) : base;
+}
+function tokens(p, k, now){
+  const rpm = rpmOf(p, k), cap = Math.max(2, Math.round(rpm / 3)), rate = rpm / 60000;
+  const b = st.bucket[k] || (st.bucket[k] = { v:cap, t:now });
+  b.v = Math.min(cap, b.v + Math.max(0, now - b.t) * rate); b.t = now;
+  return { b, rate };
+}
+function spare(p, m, now){ return tokens(p, mkey(p, m), now).b.v; }
 function gate(p, m, now, force){
   rollDay();
   const lim = cfg.limits[p], k = mkey(p, m), name = `${PROV[p].name} ${shortModel(m)}`.trim();
   if (usage.out[k]) return `${name}: free limit used up for today`;
   if ((usage.models[k] || 0) >= lim.cap) return `${name}: daily cap of ${lim.cap} calls reached. Change it in Settings.`;
-  if (now < (st.backoff[k] || 0)) return `${name} limit hit, retrying in ${Math.ceil((st.backoff[k] - now) / 1000)} s`;
+  if (now < (st.backoff[k] || 0)) return `${name} is cooling down, ${Math.ceil((st.backoff[k] - now) / 1000)} s`;
+  const rpm = rpmOf(p, k);
   const rec = st.recent[k] = (st.recent[k] || []).filter(t => now - t < 60000);
-  if (rec.length >= lim.rpm) return `Pacing at ${lim.rpm} calls a minute, next in ${Math.ceil((60000 - (now - rec[0])) / 1000)} s`;
+  if (rec.length >= rpm) return `Pacing calls, next in ${Math.ceil((60000 - (now - rec[0])) / 1000)} s`;
+  const { b, rate } = tokens(p, k, now);
+  if (b.v < 1) return `Pacing calls, next in ${Math.ceil((1 - b.v) / rate / 1000)} s`;
   if (!force && now - st.lastCall < MIN_GAP) return '';
   return null;
 }
-function noteCall(p, m, now){ const k = mkey(p, m); (st.recent[k] = st.recent[k] || []).push(now); }
+function noteCall(p, m, now){
+  const k = mkey(p, m);
+  (st.recent[k] = st.recent[k] || []).push(now);
+  tokens(p, k, now).b.v -= 1;
+}
+
+/* ---------- Time allowance ---------- */
+// Calls left today across the main model and its backups, and how long they last at your pace.
+function callsLeft(){
+  return candidates().filter(c => cfg.keys[c.p] && !usage.out[mkey(c.p, c.model)])
+    .reduce((s, c) => s + Math.max(0, cfg.limits[c.p].cap - (usage.models[mkey(c.p, c.model)] || 0)), 0);
+}
+const PRIOR_RATE = 110;   // calls per active hour until your own pace is known: a new question about every 40 s, some double-checked
+function callRate(){
+  const h = (usage.activeSec || 0) / 3600, w = 10 / 60;   // the guess counts like 10 minutes of use
+  return (usage.calls + PRIOR_RATE * w) / (h + w);
+}
+function hoursLeft(){ const r = callRate(); return r > 0 ? callsLeft() / r : Infinity; }
+function goalLeft(){ return Math.max(0, (Number(cfg.goal) || 0) - (usage.activeSec || 0) / 3600); }
+function saving(){ return Number(cfg.goal) > 0 && hoursLeft() < goalLeft(); }
+function fmtH(h){
+  if (!isFinite(h)) return 'plenty of time';
+  const m = Math.max(0, Math.round(h * 60));
+  return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`;
+}
 function candidates(){
   const list = [{ p:cfg.prov, model:cfg.models[cfg.prov] }, ...(cfg.backups || [])];
   return list.filter((c, i) => c && PROV[c.p] && c.model && list.findIndex(o => o && o.p === c.p && o.model === c.model) === i);
@@ -901,6 +982,10 @@ function addSig(e, sig){
 
 function tick(){
   if (!st.stream || st.paused || document.hidden || dlg.open || !$('drawLayer').hidden) return;
+  const tNow = performance.now();
+  if (st.lastTickT){ usage.activeSec = (usage.activeSec || 0) + Math.min(1, (tNow - st.lastTickT) / 1000); if (Math.floor(usage.activeSec) % 20 === 0) { saveUsage(); renderStats(); } }
+  st.lastTickT = tNow;
+  if (document.activeElement === $('followInput')) return;
   const g = grab(); if (!g) return;
   const now = performance.now();
   const T = SENS[cfg.sens] || SENS.normal;
@@ -999,12 +1084,13 @@ function remember(e){
   st.history = st.history.filter(h => h !== e);
   st.history.unshift(e);
   if (st.history.length > 30) st.history.length = 30;
+  st.history.forEach((h, i) => { if (i >= 5 && h !== st.current) h.img = null; });   // photos kept only for recent answers, for follow-ups
 }
 
 /* ---------- Prompt ---------- */
 const nativeReason = (p, model) => p === 'groq' && /qwen3|gpt-oss/i.test(model || '');
 const VISION_RE = /qwen3\.[5-9]|vision|llama-4|scout|maverick|llava|muse-spark|-vl\b|vl-/i;
-const QLINE = '<the question on one line, without headings, numbering or labels, under 220 characters. Include its key details, such as numbers, names and short answer options, so two different questions never give the same line. For a picture puzzle, add a few words describing the figures.>';
+const QLINE = '<the question on one line, without headings, numbering or labels, under 220 characters. Include its key details, such as numbers, names and short answer options, so two different questions never give the same line, except for ranking or drag-and-drop questions, where you leave out the items and their current order. For a picture puzzle, add a few words describing the figures.>';
 function instructions(p, lv){
   const textThink = thinks(lv) && PROV[p].kind !== 'gemini' && !nativeReason(p, cfg.models[p]);
   const len = {
@@ -1013,11 +1099,11 @@ function instructions(p, lv){
     steps:'Give a clear step-by-step solution in at most 8 short steps.'
   }[cfg.detail] || '';
   const format = textThink
-    ? ['QUESTION: ' + QLINE,
+    ? ['QUESTION: ' + QLINE, 'LEVEL: <EASY or HARD>',
        'WORKING:', '<reason step by step, as briefly as you can>',
-       'ANSWER: <the final answer on one line>']
-    : ['QUESTION: ' + QLINE,
-       'ANSWER:', '<the final answer alone on the first line>', '<optional working>'];
+       'ANSWER: <the final answer on one line>', 'CHECK: <your calculations, or NONE>']
+    : ['QUESTION: ' + QLINE, 'LEVEL: <EASY or HARD>',
+       'ANSWER:', '<the final answer alone on the first line>', '<optional working>', 'CHECK: <your calculations, or NONE>'];
   return [
     'You are reading one photo taken by a phone camera. Find the main question, problem, puzzle or task in it (printed, handwritten, drawn or on a screen) and answer it. It can be on any subject, and can also be a request such as translate, summarize, define or write.',
     'Reply in exactly this format and nothing else:', ...format,
@@ -1025,9 +1111,12 @@ function instructions(p, lv){
     '- If several questions are visible, answer the one nearest the center or the most prominent.',
     '- For multiple choice, start the answer with the option letter, then the option text if there is any.',
     '- For a question with parts (a), (b) and so on, answer every part, each on its own line starting with its label.',
+    '- For a ranking, ordering or drag-and-drop question, the answer is the complete order as a numbered list, one item per line, from the item that goes first (top) to the one that goes last, in the direction the question asks, such as lowest to highest. Put the value you ranked by in brackets after each item. Work out every value before choosing the order, and ignore the order the items are shown in now.',
     '- For visual puzzles (grids, series, shapes, folding, rotation), study every figure carefully and find the rule before choosing.',
     '- Write math as LaTeX inside $...$. Keep every formula on one line.',
     '- ' + len,
+    '- LEVEL is HARD for several calculation steps, ranking or ordering, picture puzzles, or whenever you are not sure. Otherwise it is EASY.',
+    '- CHECK lists every calculation your answer relies on as expression = result, separated by semicolons, using only numbers, + - * / and brackets, for example 812365-771165=41200; 41200/771165*100=5.34. Write NONE if there were no calculations.',
     '- If there is no question or task in view, reply with only: NONE',
     '- If the text is too blurry or cut off to read, reply with only: BLURRY'
   ].join('\n');
@@ -1066,7 +1155,7 @@ async function readSSE(res, onObj){
     }
   }
 }
-async function streamGemini(model, b64, signal, hooks, lv){
+async function streamGemini(model, b64, signal, hooks, lv, sys, userText){
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
   const bad = st.badLevel[model] = st.badLevel[model] || new Set();
   let level = lv;
@@ -1074,9 +1163,9 @@ async function streamGemini(model, b64, signal, hooks, lv){
   let useThink = !st.noThink.has(model) && !!level;
   for (let attempt = 0; attempt < 4; attempt++){
     const body = {
-      systemInstruction:{ parts:[{ text:instructions('gemini', lv) }] },
-      contents:[{ role:'user', parts:[{ inlineData:{ mimeType:'image/jpeg', data:b64 } }, { text:'Answer the question in this photo.' }] }],
-      generationConfig:{ temperature:0.2, maxOutputTokens:maxTokens('gemini', lv) }
+      systemInstruction:{ parts:[{ text:sys || instructions('gemini', lv) }] },
+      contents:[{ role:'user', parts:[{ inlineData:{ mimeType:'image/jpeg', data:b64 } }, { text:userText || 'Answer the question in this photo.' }] }],
+      generationConfig:{ maxOutputTokens:maxTokens('gemini', lv), ...(/^gemini-2/.test(model) ? { temperature:0.2 } : {}) }
     };
     if (useThink) body.generationConfig.thinkingConfig = thinkCfg(model, level);
     if (hooks.onLevel) hooks.onLevel(useThink ? level : '');
@@ -1124,13 +1213,13 @@ function thinkFilter(){
     return out;
   };
 }
-async function streamOpenAI(p, model, b64, signal, hooks, lv){
+async function streamOpenAI(p, model, b64, signal, hooks, lv, sys, userText){
   const P = PROV[p];
   const dataUrl = 'data:image/jpeg;base64,' + b64;
   const image = P.img === 'string' ? { type:'image_url', image_url:dataUrl } : { type:'image_url', image_url:{ url:dataUrl } };
   const body = {
     model, stream:true, temperature:0.2, max_tokens:maxTokens(p, lv),
-    messages:[{ role:'user', content:[{ type:'text', text:instructions(p, lv) + '\n\nAnswer the question in this photo.' }, image] }],
+    messages:[{ role:'user', content:[{ type:'text', text:(sys || instructions(p, lv)) + '\n\n' + (userText || 'Answer the question in this photo.') }, image] }],
     ...(P.extra || {})
   };
   const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.keys[p] };
@@ -1162,8 +1251,8 @@ async function streamOpenAI(p, model, b64, signal, hooks, lv){
     else if (Array.isArray(c)) c.forEach(part => { if (part && part.type === 'text' && part.text) emit(part.text); });
   });
 }
-function streamAny(p, model, b64, signal, hooks, lv){
-  return PROV[p].kind === 'gemini' ? streamGemini(model, b64, signal, hooks, lv) : streamOpenAI(p, model, b64, signal, hooks, lv);
+function streamAny(p, model, b64, signal, hooks, lv, sys, userText){
+  return PROV[p].kind === 'gemini' ? streamGemini(model, b64, signal, hooks, lv, sys, userText) : streamOpenAI(p, model, b64, signal, hooks, lv, sys, userText);
 }
 
 function errInfo(p, m, e){
@@ -1189,7 +1278,9 @@ function errInfo(p, m, e){
         return { kind:'warn', retry:true, text: next ? `${name} ${shortModel(m)} free limit used up for today, switching to ${shortModel(next.model)}` : `${name} free limit used up for today. Add a backup model in Settings.` };
       }
       st.backoff[k] = now + wait * 1000;
-      return { kind:'warn', retry:true, text:`${name} limit hit, waiting ${Math.ceil(wait)} s` };
+      const sl = st.slow[k];
+      st.slow[k] = { until:now + 600000, scale:Math.max(0.5, (sl && now < sl.until ? sl.scale : 1) * 0.8) };
+      return { kind:'warn', retry:true, text:`${name} limit hit, slowing down and retrying in ${Math.ceil(wait)} s` };
     }
     if (e.status === 401 || /api key|invalid key|unauthori[sz]ed/i.test(msg)) return { kind:'err', text:`${name} key rejected. Check it in Settings.` };
     if (e.status < 500 && /image|vision|multimodal/i.test(msg)) return { kind:'err', text:`This ${name} model can’t read images. Pick another in Settings.` };
@@ -1205,12 +1296,44 @@ const HEAD_RE = /QUESTION[\s*]*:[\s*]*(.*?)[\s*]*\n/i;
 function bodyOf(buf){
   const m = buf.match(HEAD_RE);
   if (!m && /^[\s*]*QUESTION/i.test(buf)) return '';
-  const rest = m ? buf.slice(m.index + m[0].length) : buf;
+  let rest = m ? buf.slice(m.index + m[0].length) : buf;
+  const lvl = rest.match(/^[\s*]*LEVEL[\s*]*:[^\n]*(\n|$)/i);
+  if (lvl){ if (!lvl[1]) return ''; rest = rest.slice(lvl[0].length); }
+  else if (/^[\s*]*L(E(V(E(L)?)?)?)?$/i.test(rest)) return '';
   if (/^[\s*]*A(N(S(W(E(R)?)?)?)?)?$/i.test(rest)) return '';
-  return rest.replace(/^[\s*]*ANSWER[\s*]*:[ \t*]*\r?\n?/i, '');
+  rest = rest.replace(/^[\s*]*ANSWER[\s*]*:[ \t*]*\r?\n?/i, '');
+  return rest.replace(/\n[\s*]*CHECK[\s*]*:[\s\S]*$/i, '').replace(/\n\s*C(H(E(C(K)?)?)?)?$/, '');
 }
-
-// Answer text from a reply, or '' while the header is still arriving or the reply says NONE or BLURRY.
+function levelOf(buf){ const m = buf.match(/LEVEL[\s*]*:[\s*]*(EASY|HARD)/i); return m ? m[1].toLowerCase() : null; }
+function checkOf(buf){ const m = buf.match(/\n[\s*]*CHECK[\s*]*:[\s*]*([^\n]*)/i); return m && !/^\s*NONE\b/i.test(m[1]) ? m[1] : ''; }
+// Safe arithmetic for the model's own sums: numbers, + - * / ^, brackets and %; anything else is skipped.
+function calc(expr){
+  const s = String(expr).replace(/[£$€¥,\s]/g, '').replace(/([\d)])[×x](?=[\d(])/g, '$1*').replace(/×/g, '*').replace(/÷/g, '/').replace(/[−–—]/g, '-');
+  let i = 0;
+  const num = () => { const m = s.slice(i).match(/^\d+(\.\d+)?|^\.\d+/); if (!m) return NaN; i += m[0].length; let v = parseFloat(m[0]); if (s[i] === '%'){ i++; v /= 100; } return v; };
+  const factor = () => { if (s[i] === '-'){ i++; return -factor(); } if (s[i] === '+'){ i++; return factor(); } if (s[i] === '('){ i++; const v = sum(); if (s[i] !== ')') return NaN; i++; return v; } return num(); };
+  const power = () => { let v = factor(); while (s[i] === '^'){ i++; v = Math.pow(v, factor()); } return v; };
+  const term = () => { let v = power(); while (s[i] === '*' || s[i] === '/'){ const op = s[i++]; const r = power(); v = op === '*' ? v * r : v / r; } return v; };
+  function sum(){ let v = term(); while (s[i] === '+' || s[i] === '-'){ const op = s[i++]; const r = term(); v = op === '+' ? v + r : v - r; } return v; }
+  if (!s || /[a-z]/i.test(s)) return NaN;
+  const v = sum();
+  return i === s.length ? v : NaN;
+}
+function checkCalcs(line){
+  const out = { n:0, bad:[] };
+  (line || '').split(/;/).forEach(item => {
+    const parts = item.split(/[=≈]/).map(x => x.trim()).filter(Boolean);
+    if (parts.length < 2) return;
+    const rs = parts[parts.length - 1], rhs = calc(rs);
+    if (!isFinite(rhs)) return;
+    const d = ((rs.replace(/[^\d.]/g, '').split('.')[1]) || '').length;
+    const tol = 0.5 * Math.pow(10, -d) * (/%/.test(rs) ? 0.01 : 1) * 1.05 + 1e-9 * Math.abs(rhs);
+    let checked = false, wrong = false;
+    parts.slice(0, -1).forEach(ls => { const v = calc(ls); if (isFinite(v)){ checked = true; if (Math.abs(v - rhs) > tol) wrong = true; } });
+    if (checked){ out.n++; if (wrong) out.bad.push(item.trim()); }
+  });
+  return out;
+}
 function mainBody(b){
   const t = b.replace(/^[\s*]+/, ''), T = t.toUpperCase();
   if (/^(NONE|BLURRY)\b/.test(T)) return '';
@@ -1230,6 +1353,11 @@ function headOf(b){
 // The model's question line is trusted to spot a repeat only when the view changed a little
 // and the line is specific enough; similar-looking questions are never merged.
 function specific(q){ return normQ(q).length >= 50 || /\d/.test(core(q)); }
+function sameStrict(h, q){
+  if (!h || !h.q || !q || nums(h.q) !== nums(q)) return false;
+  const a = normQ(h.q), b = normQ(q);
+  return !!a && (a === b || (Math.min(a.length, b.length) >= 40 && dice(a, b) >= 0.92));
+}
 async function ask(force, sig, info){
   const now = performance.now();
   if (!info){
@@ -1251,23 +1379,24 @@ async function ask(force, sig, info){
   count(p, model);
   const t0 = performance.now();
   const meter = { inTok:0, outTok:0, seen:false, open:false };
-  let buf = '', phase = 'head', entry = null, handled = false, qs = null;
+  let buf = '', phase = 'head', entry = null, handled = false, retried = false;
 
   const begin = q => {
-    entry = { q, raw:'', done:false, sigs: sig ? [sig] : [], prov:p, model, lv, quick:qs };
+    entry = { q, raw:'', done:false, sigs: sig ? [sig] : [], prov:p, model, lv, img, t0, check:null };
     phase = 'body';
     if (front()){ st.shownSeq = seq; show(entry, true); }
     startAlt(entry, img);
   };
-  // Whichever call names the question first decides whether it is new. Returns true if it was answered before.
+  // Small view change: the usual similarity check. Big change: only an identical, specific question counts as the same.
   const onHead = q => {
-    if (!force && info.frac < 0.25 && specific(q)){
-      if (st.current && same(st.current, q)){
+    const match = h => info.frac < 0.25 ? same(h, q) : sameStrict(h, q);
+    if (!force && specific(q)){
+      if (st.current && match(st.current)){
         handled = true; addSig(st.current, sig); ctrl.abort();
         say('ok', 'Same question, answer kept');
         return true;
       }
-      const past = st.history.find(h => h !== st.current && same(h, q));
+      const past = st.history.find(h => h !== st.current && match(h));
       if (past){
         handled = true; addSig(past, sig); ctrl.abort();
         if (front()){ st.shownSeq = seq; show(past, true); }
@@ -1278,50 +1407,19 @@ async function ask(force, sig, info){
     begin(q);
     return false;
   };
+  // Double-check with Full thinking: only hard questions or sums that don't add up, and only when calls allow.
+  const escalate = why => {
+    if (!entry || handled || entry.check || lv === 'high' || !cfg.check) return;
+    const ok = canCheck(p, model, why);
+    if (ok === true){ entry.skip = null; entry.check = startCheck(entry, p, model, why, seq); }
+    else {
+      entry.skip = ok;
+      if (ok === 'busy' && !retried){ retried = true; setTimeout(() => escalate(why), 3000); }
+    }
+    if (st.current === entry) paintBody(entry, entry.done);
+  };
 
-  // Quick answer first: the same photo without thinking, shown until the thinking answer starts.
-  if (cfg.quick && thinks(lv) && gate(p, model, performance.now(), true) === null){
-    const qctrl = new AbortController(); st.quickCtrls.add(qctrl);
-    qs = { raw:'', done:false, first:0, ctrl:qctrl };
-    ctrl.signal.addEventListener('abort', () => qctrl.abort());
-    noteCall(p, model, performance.now()); count(p, model); usage.quick = (usage.quick || 0) + 1; saveUsage();
-    const qm = { inTok:0, outTok:0, seen:false, open:false };
-    let qbuf = '', qlast = performance.now();
-    const qwatch = setInterval(() => { if (performance.now() - qlast > 12000) qctrl.abort(); }, 1000);
-    streamAny(p, model, img, qctrl.signal, {
-      onOpen:() => { qm.open = true; qlast = performance.now(); },
-      onUsage:u => applyUsage(qm, u),
-      onText:t => {
-        qlast = performance.now();
-        if (handled || qs.skip) return;
-        qbuf += t;
-        if (phase === 'head'){
-          const h = headOf(qbuf);
-          if (h === null) return;
-          if (h === false){ qs.skip = true; return; }   // let the thinking call decide
-          if (onHead(h)) return;
-          say('asking', 'Quick answer shown, checking…');
-        }
-        if (entry && entry.quick === qs){
-          const body = mainBody(qbuf);
-          if (!body) return;
-          if (!qs.first) qs.first = Math.round(performance.now() - t0);
-          qs.raw = body;
-          if (!entry.raw && st.current === entry) paintBody(entry, false);
-        }
-      }
-    }, 'minimal').then(() => {
-      qs.done = true;
-      bill(p, qm, null);
-      if (entry && entry.quick === qs && !entry.raw && st.current === entry) paintBody(entry, true);
-    }).catch(e => {
-      bill(p, qm, null);
-      if (e.name !== 'AbortError'){ usage.errors++; saveUsage(); errInfo(p, model, e); }
-    }).finally(() => { clearInterval(qwatch); st.quickCtrls.delete(qctrl); });
-  }
-  const reading = qs ? 'reading, quick answer first…' : 'reading…';
-  say('asking', backup ? `Backup ${shortModel(model)}: ${reading}` : reading[0].toUpperCase() + reading.slice(1));
-
+  say('asking', backup ? `Backup ${shortModel(model)}: reading…` : 'Reading…');
   const onText = txt => {
     if (handled) return;
     buf += txt;
@@ -1332,10 +1430,10 @@ async function ask(force, sig, info){
       say('asking', 'Answering…');
     }
     if (phase === 'body'){
+      if (!entry.level){ const l = levelOf(buf); if (l){ entry.level = l; if (l === 'hard') escalate('hard'); } }
       const body = mainBody(buf);
       if (!body) return;
       if (!entry.first) entry.first = Math.round(performance.now() - t0);
-      if (!entry.raw && qs && qs.raw) say('asking', 'Answering…');
       entry.raw = body;
       if (st.current === entry) paintBody(entry, false);
     }
@@ -1347,17 +1445,9 @@ async function ask(force, sig, info){
   let lastData = t0, gotText = false;
   const watch = setInterval(() => {
     const t = performance.now(), s = Math.round((t - t0) / 1000);
-    if (!handled){
-      if (phase === 'head') say('asking', `${thinks(lv) ? 'Thinking' : 'Reading'}… ${s} s`);
-      else if (entry && !entry.raw && qs && qs.raw) say('asking', `Quick answer shown, checking… ${s} s`);
-    }
+    if (phase === 'head' && !handled) say('asking', `${thinks(lv) ? 'Thinking' : 'Reading'}… ${s} s`);
     if ((!gotText && t - t0 > lim.first) || (gotText && t - lastData > lim.stall) || t - t0 > lim.total){ ctrl.timedOut = true; ctrl.abort(); }
   }, 1000);
-  // If the thinking answer fails, keep the quick one rather than nothing.
-  const fallBack = () => {
-    if (entry && !entry.raw && qs && qs.raw){ entry.raw = qs.raw; entry.quickOnly = true; return true; }
-    return false;
-  };
 
   try {
     await streamAny(p, model, img, ctrl.signal, hooks, lv);
@@ -1367,36 +1457,31 @@ async function ask(force, sig, info){
       if (/^BLURRY/i.test(t)){ bill(p, meter, 'blurry'); say('warn', 'Too blurry. Move closer or hold still.'); return; }
       if (!buf.trim()){ bill(p, meter, 'errors'); say('warn', 'Empty reply. Tap Ask now to retry.'); return; }
       begin('');
-      entry.raw = bodyOf(buf);
-    } else if (!entry.raw) fallBack();
+    }
+    if (!entry.raw) entry.raw = bodyOf(buf);
     entry.done = true;
     entry.lv = usedLv;
     entry.ms = Math.round(performance.now() - t0);
     entry.inTok = meter.inTok; entry.outTok = meter.outTok;
-    if (qs && qs.done && qs.raw && !entry.quickOnly){
-      entry.quickSame = answerKey(qs.raw) === answerKey(entry.raw);
-      usage[entry.quickSame ? 'qSame' : 'qDiff']++;
-    }
-    if (qs && qs.first){ usage.qFirstSum += qs.first; usage.qN++; }
-    if (entry.first && !entry.quickOnly){ usage.firstSum += entry.first; usage.doneSum += entry.ms; usage.tN++; }
-    if (entry.q && !entry.quickOnly) remember(entry);
+    if (!entry.level) entry.level = levelOf(buf);
+    // Local calculation check: recompute the model's own sums on the phone.
+    entry.calc = checkCalcs(checkOf(buf));
+    if (entry.calc.n){ usage[entry.calc.bad.length ? 'calcBad' : 'calcOk']++; }
+    if (entry.calc.bad.length) escalate('sums');
+    if (entry.first){ usage.firstSum += entry.first; usage.doneSum += entry.ms; usage.tN++; }
+    if (entry.q) remember(entry);
     bill(p, meter, 'answered');
     if (st.current === entry) paintBody(entry, true);
     renderEarlier();
     st.timeouts = 0;
-    say('ok', entry.quickOnly ? 'Only the quick answer arrived' : `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
+    say('ok', entry.check && !entry.check.done ? 'Answered, double-checking…' : `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
   } catch (e) {
     if (e.name === 'AbortError' && ctrl.timedOut){
       bill(p, meter, 'errors');
-      const kept = fallBack();
-      if (entry){
-        if (!kept) entry.raw += '\n\n(cut off: took too long)';
-        entry.done = true; if (st.current === entry) paintBody(entry, true);
-      }
+      if (entry){ entry.raw += '\n\n(cut off: took too long)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
       st.timeouts = (st.timeouts || 0) + 1;
       if (seq === st.seq){
-        if (kept) say('warn', 'Thinking took too long, quick answer kept. Tap Ask now to try again.');
-        else if (st.timeouts < 2){ st.anchor = null; say('warn', `${PROV[p].name} took too long, asking again`); }
+        if (st.timeouts < 2){ st.anchor = null; say('warn', `${PROV[p].name} took too long, asking again`); }
         else say('warn', `${PROV[p].name} isn’t answering. Check your connection, then tap Ask now.`);
       }
       return;
@@ -1406,15 +1491,55 @@ async function ask(force, sig, info){
     const r = errInfo(p, model, e);
     if (r.retry) st.anchor = null;
     say(r.kind, r.text);
-    if (entry){
-      if (!fallBack()) entry.raw += '\n\n(cut off)';
-      entry.done = true; if (st.current === entry) paintBody(entry, true);
-    }
+    if (entry){ entry.raw += '\n\n(cut off)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
   } finally {
     clearInterval(watch);
     st.inflight.delete(ctrl);
-    if (qs && !qs.done) qs.ctrl.abort();
   }
+}
+
+// May a Full double-check go now? true, or why not: 'saving' (behind your daily goal) or 'busy' (no call in hand).
+function canCheck(p, m, why){
+  if (callsLeft() < 10) return 'saving';
+  if (why === 'hard' && saving()) return 'saving';
+  const now = performance.now();
+  if (st.checkCtrls.size >= 1 || gate(p, m, now, true) !== null || spare(p, m, now) < 2) return 'busy';   // keep a call in hand for your next question
+  return true;
+}
+function startCheck(entry, p, model, why, seq){
+  const c = { raw:'', done:false, why };
+  const ctrl = new AbortController(); st.checkCtrls.add(ctrl);
+  const now = performance.now();
+  st.lastCall = now; noteCall(p, model, now); count(p, model);
+  usage.checks = (usage.checks || 0) + 1; saveUsage();
+  const meter = { inTok:0, outTok:0, seen:false, open:false };
+  let buf = '', last = now;
+  const stop = setInterval(() => { const t = performance.now(); if (t - now > 45000 || t - last > 20000) ctrl.abort(); }, 1000);
+  streamAny(p, model, entry.img, ctrl.signal, {
+    onOpen:() => { meter.open = true; last = performance.now(); },
+    onUsage:u => applyUsage(meter, u),
+    onText:t => { last = performance.now(); buf += t; const b = mainBody(buf); if (b) c.raw = b; }
+  }, 'high').then(() => {
+    c.done = true; c.ms = Math.round(performance.now() - entry.t0);
+    if (!c.raw) c.raw = bodyOf(buf);
+    if (/^[\s*]*(NONE|BLURRY)\b/i.test(buf) || !c.raw.trim()) c.failed = true;
+    else {
+      c.calc = checkCalcs(checkOf(buf));
+      entry.checkSame = answerKey(c.raw) === answerKey(entry.raw);
+      usage[entry.checkSame ? 'cSame' : 'cDiff']++;
+    }
+    bill(p, meter, null);
+    if (seq === st.seq) setStatus('ok', c.failed ? 'Double-check didn’t finish' : entry.checkSame ? 'Confirmed by Full thinking' : 'Corrected by Full thinking');
+  }).catch(e => {
+    c.done = true; c.failed = true;
+    bill(p, meter, null);
+    if (e.name !== 'AbortError'){ usage.errors++; saveUsage(); errInfo(p, model, e); }
+  }).finally(() => {
+    clearInterval(stop); st.checkCtrls.delete(ctrl);
+    if (st.current === entry) paintBody(entry, entry.done);
+    renderEarlier();
+  });
+  return c;
 }
 
 /* ---------- Second opinion ---------- */
@@ -1468,6 +1593,10 @@ function finalsWork(raw){
   const lines = t ? t.split('\n') : [];
   const finals = [];
   if (lines.length) finals.push(lines.shift());
+  const isNum = l => /^\s*[-*]?\s*\d{1,2}[.)]\s+\S/.test(l);
+  // A ranking or ordering: "1. …", "2. …" lines (possibly after a heading line ending in ":")
+  if (isNum(finals[0]) || /:\s*\**\s*$/.test(finals[0]))
+    while (lines.length && (isNum(lines[0]) || (!lines[0].trim() && lines[1] && isNum(lines[1])))){ const l = lines.shift(); if (l.trim()) finals.push(l); }
   while (lines.length && /^\s*\(?[a-h]\)\s/i.test(lines[0])) finals.push(lines.shift());
   return { finals, work:lines.join('\n').trim(), pending:false };
 }
@@ -1483,6 +1612,8 @@ function finalHTML(line){
   const mc = t.match(/^\(?([A-F])\)?(?:[.):]\s*(.*))?$/);
   if (mc) return `<p class="final mc"><span class="opt">${mc[1]}</span>${mc[2] ? `<span>${inline(mc[2])}</span>` : ''}</p>`;
   if (/^\(?[a-h]\)\s/i.test(t)) return `<p class="final part">${inline(t)}</p>`;
+  const rk = t.match(/^(\d{1,2})[.)]\s+(.*)$/);
+  if (rk) return `<p class="final rank"><span class="num">${rk[1]}</span><span>${inline(rk[2])}</span></p>`;
   return `<p class="final"><mark>${inline(t)}</mark></p>`;
 }
 function format(raw, provisional, meta){
@@ -1526,33 +1657,44 @@ function show(e, fresh){
   ql.textContent = e.q || '';
   if (fresh && e.q){ ql.classList.remove('fresh'); void ql.offsetWidth; ql.classList.add('fresh'); }
   paintBody(e, e.done);
+  renderFollow(e);
   if (changed){ const a = $('aBody'); a.classList.remove('enter'); void a.offsetWidth; a.classList.add('enter'); $('sheet').scrollTop = 0; }
   renderEarlier();
 }
 function firstLine(raw){ return (finalsWork(raw).finals[0] || '').replace(/^\s*[-*]\s+/, ''); }
-function shortAnswer(raw){ return firstLine(raw).replace(/\*\*/g, '').replace(/\$/g, '').trim(); }
+function shortAnswer(raw){
+  const f = finalsWork(raw).finals.map(l => l.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, '').replace(/\$/g, '').trim());
+  const ranked = f.filter(l => /^\d{1,2}[.)]\s/.test(l));
+  return ranked.length > 1 ? ranked.map(l => l.replace(/^\d{1,2}[.)]\s+/, '')).join(', ') : (f[0] || '');
+}
 function paintBody(e, final){
-  const Q = e.quick, s = ms => (ms / 1000).toFixed(1) + ' s';
-  const quickView = Q && !e.raw && !e.done;
+  const C = e.check, s = ms => (ms / 1000).toFixed(1) + ' s';
+  const checking = C && !C.done;
+  const useCheck = C && C.done && !C.failed && C.raw;
+  const shown = useCheck ? C.raw : e.raw;
+  const calc = useCheck ? C.calc : e.calc;
   // Status chips sit above the answer, so the answer itself never moves when they change.
   let chips = '';
-  if (quickView && Q.raw) chips = '<span class="chip wait"><span class="dot"></span>Quick answer, checking</span>';
-  else if (e.quickOnly) chips = '<span class="chip diff">Not checked</span><span>The thinking answer didn’t arrive.</span>';
-  else if (e.done && Q && Q.done && Q.raw) chips = e.quickSame ? '<span class="chip ok">Checked</span>' : `<span class="chip diff">Changed after thinking</span><span>Quick answer was ${inline(shortAnswer(Q.raw))}</span>`;
-  if (e.ms) chips += `<span class="chip">${s(e.ms)}</span>`;
+  if (checking) chips += `<span class="chip wait"><span class="dot"></span>${C.why === 'sums' ? 'A sum looked off, checking with Full thinking' : 'Hard question, checking with Full thinking'}</span>`;
+  else if (useCheck) chips += e.checkSame ? '<span class="chip ok">Confirmed by Full thinking</span>' : `<span class="chip diff">Corrected by Full thinking</span><span>Light said ${inline(shortAnswer(e.raw))}</span>`;
+  else if (C && C.failed) chips += '<span class="chip muted">Double-check didn’t finish</span>';
+  if (calc && calc.n && !checking) chips += calc.bad.length ? `<span class="chip diff">${calc.bad.length === 1 ? 'A sum doesn’t add up' : calc.bad.length + ' sums don’t add up'}</span>` : `<span class="chip ok">${calc.n === 1 ? 'Sum checks out' : 'Sums check out'}</span>`;
+  if (e.skip && !C && e.done) chips += `<span class="chip muted">${e.skip === 'saving' ? 'Not double-checked, saving calls' : 'Not double-checked, at the call limit'}</span>`;
+  if (e.ms && !checking) chips += `<span class="chip">${s(useCheck ? C.ms : e.ms)}</span>`;
   let meta = '';
   if (e.ms){
     const level = e.lv != null ? `, ${levelLabel(e.prov, e.lv)}` : '';
-    const quickAt = Q && Q.first ? `quick answer at ${s(Q.first)}, ` : '';
-    const thinkAt = e.quickOnly ? '' : `${Q && Q.first ? 'thinking answer' : 'first words'} at ${s(e.first || e.ms)}, `;
-    meta = `${esc(PROV[e.prov].name)}, ${esc(shortModel(e.model))}${esc(level)}: ${quickAt}${thinkAt}finished at ${s(e.ms)}, ${e.inTok || '?'} input and ${e.outTok || '?'} output tokens.`;
+    meta = `${esc(PROV[e.prov].name)}, ${esc(shortModel(e.model))}${esc(level)}: first words at ${s(e.first || e.ms)}, finished at ${s(e.ms)}`
+      + (C && C.ms ? `, Full double-check finished at ${s(C.ms)}` : '')
+      + `, ${e.inTok || '?'} input and ${e.outTok || '?'} output tokens.`;
+    if (calc && calc.bad.length) meta += ` Sum check: ${esc(calc.bad.join('; '))}.`;
   }
-  let h = (chips ? `<p class="chips">${chips}</p>` : '') + format(quickView ? Q.raw : e.raw, quickView, meta);
+  let h = (chips ? `<p class="chips">${chips}</p>` : '') + format(shown, checking, meta);
   if (e.alt){
     const A = e.alt;
     let badge = '';
     if (A.done && !A.note && e.done && A.raw && e.raw){
-      const agree = answerKey(A.raw) === answerKey(e.raw);
+      const agree = answerKey(A.raw) === answerKey(shown);
       badge = `<span class="badge ${agree ? 'same' : 'diff'}">${agree ? 'Same answer' : 'Different answer'}</span>`;
     }
     h += `<section class="alt" aria-label="Second opinion"><p class="alt-head"><span>Second opinion: ${esc(PROV[A.prov].name)}, ${esc(shortModel(A.model))}</span>${badge}</p>`
@@ -1563,6 +1705,59 @@ function paintBody(e, final){
   a.innerHTML = h;
   if (final) renderMath(a);
 }
+// Follow-up questions about the same photo
+function renderFollow(e){
+  $('followWrap').hidden = !(e && e.img);
+  const box = $('followThread');
+  box.innerHTML = '';
+  ((e && e.follow) || []).forEach(f => {
+    box.insertAdjacentHTML('beforeend', `<p class="fq">${esc(f.q)}</p><div class="fa">${f.raw ? inline(f.raw.trim()).replace(/\n/g, '<br>') : 'Thinking…'}</div>`);
+  });
+}
+async function followAsk(){
+  const e = st.current, text = $('followInput').value.trim();
+  if (!e || !e.img || !text) return;
+  const now = performance.now(), pk = pick(now, true);
+  if (!pk.c){
+    // Pacing: send it as soon as a call is free instead of failing
+    const w = /next in (\d+) s/.exec(pk.msg || '');
+    if (w && !st.followWait){ st.followWait = setTimeout(() => { st.followWait = null; followAsk(); }, (Number(w[1]) + 0.3) * 1000); setStatus('idle', `Follow-up queued, sending in ${w[1]} s`); }
+    else if (!w) setStatus('warn', pk.msg || 'No calls available right now');
+    return;
+  }
+  const { p, model } = pk.c;
+  $('followInput').value = '';
+  const f = { q:text, raw:'', done:false };
+  (e.follow = e.follow || []).push(f);
+  renderFollow(e);
+  st.lastCall = now; noteCall(p, model, now); count(p, model);
+  usage.follow = (usage.follow || 0) + 1; saveUsage();
+  const shown = e.check && e.check.done && !e.check.failed && e.check.raw ? e.check.raw : e.raw;
+  const prior = e.follow.slice(0, -1).map(x => `Q: ${x.q}\nA: ${x.raw.trim()}`).join('\n\n');
+  const sys = [
+    `You are looking at a photo from a phone camera. Earlier, for the question "${e.q || 'in the photo'}", you answered:\n${finalsWork(shown).finals.join('\n')}`,
+    prior ? 'Earlier follow-ups:\n' + prior : '',
+    'Now answer the follow-up below about the same photo. Be clear and brief, use short lines, and write math as LaTeX inside $...$. Do not repeat the question.'
+  ].filter(Boolean).join('\n\n');
+  const meter = { inTok:0, outTok:0, seen:false, open:false };
+  setStatus('asking', 'Answering your follow-up…');
+  try {
+    await streamAny(p, model, e.img, new AbortController().signal, {
+      onOpen:() => { meter.open = true; },
+      onUsage:u => applyUsage(meter, u),
+      onText:t => { f.raw += t; if (st.current === e) renderFollow(e); }
+    }, cfg.depth, sys, text);
+    setStatus('ok', 'Follow-up answered');
+  } catch (err) {
+    f.raw += f.raw ? '\n(cut off)' : 'Couldn’t answer: ' + errInfo(p, model, err).text;
+    setStatus('warn', 'Follow-up failed');
+  }
+  f.done = true;
+  bill(p, meter, null);
+  if (st.current === e){ renderFollow(e); renderMath($('followThread')); }
+}
+$('followSend').addEventListener('click', followAsk);
+$('followInput').addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); followAsk(); } });
 // Earlier answers: question on the left, its answer on the right, so you can scan them without opening each one.
 function renderEarlier(){
   const list = st.history.filter(h => h !== st.current).slice(0, 12);
@@ -1572,7 +1767,8 @@ function renderEarlier(){
   list.forEach(h => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `<span class="eq">${esc(h.q || 'Untitled question')}</span><span class="ea">${esc(shortAnswer(h.raw))}</span>`;
+    const best = h.check && h.check.done && !h.check.failed && h.check.raw ? h.check.raw : h.raw;
+    b.innerHTML = `<span class="eq">${esc(h.q || 'Untitled question')}</span><span class="ea">${esc(shortAnswer(best))}</span>`;
     b.addEventListener('click', () => show(h, false));
     box.append(b);
   });
@@ -1728,7 +1924,8 @@ function openSettings(toUsage){
   fillProviderSelects();
   document.querySelectorAll('input[name=detail]').forEach(r => { r.checked = r.value === cfg.detail; });
   document.querySelectorAll('input[name=depth]').forEach(r => { r.checked = r.value === cfg.depth; });
-  $('quickInput').checked = !!cfg.quick;
+  $('checkInput').checked = cfg.check !== false;
+  $('goalInput').value = String(cfg.goal == null ? 2 : cfg.goal);
   $('imgSelect').value = String(cfg.img);
   $('sensSelect').value = cfg.sens;
   renderLimits();
@@ -1765,7 +1962,8 @@ $('saveSettings').addEventListener('click', () => {
   const d = document.querySelector('input[name=detail]:checked'); if (d) cfg.detail = d.value;
   const dp = document.querySelector('input[name=depth]:checked'); if (dp) cfg.depth = dp.value;
   cfg.think = thinks(cfg.depth);
-  cfg.quick = $('quickInput').checked;
+  cfg.check = $('checkInput').checked;
+  { const gv = Number($('goalInput').value); cfg.goal = Number.isFinite(gv) && gv >= 0 ? Math.min(16, gv) : 2; }
   cfg.img = Number($('imgSelect').value) || 1024;
   cfg.backups = [0, 1].map(i => ({ p:$('bk' + i + 'Prov').value, model:$('bk' + i + 'Model').value }))
     .filter(b => b.p && b.model && !(b.p === cfg.prov && b.model === cfg.models[cfg.prov]));
@@ -1797,6 +1995,7 @@ $('pauseBtn').addEventListener('click', () => {
     st.inflight.forEach(c => c.abort());
     st.altCtrls.forEach(c => c.abort());
     st.quickCtrls.forEach(c => c.abort());
+    st.checkCtrls.forEach(c => c.abort());
     setStatus('idle', 'Paused, no calls');
   } else { st.stableSince = performance.now(); setStatus('idle', 'Watching'); }
 });
