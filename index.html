@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
 <title>Live Answer</title>
+<link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap" rel="stylesheet">
@@ -32,15 +33,16 @@
 [hidden]{display:none !important}
 html,body{height:100%;margin:0}
 body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",-apple-system,system-ui,"Segoe UI",sans-serif;font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overscroll-behavior:none}
-.app{display:flex;flex-direction:column;height:100%}
+.app{position:relative;display:flex;flex-direction:column;height:100%}
 
 /* Viewfinder */
 .vf{position:relative;flex:0 0 50%;background:#000;overflow:hidden;touch-action:manipulation}
-.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transform-origin:50% 50%}
 .crop{position:absolute;border:2px dashed rgba(255,255,255,.85);border-radius:10px;pointer-events:none;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
-.status{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:12px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:.86rem;font-weight:600;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.status #statusText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dot{width:9px;height:9px;border-radius:50%;background:#9FB3A8;flex:none}
+.status{display:flex;flex:1;align-items:center;gap:8px;min-width:0;color:var(--pencil);font-size:.88rem;font-weight:600}
+.status #statusText{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+@media (orientation:portrait){.app[data-cam=small] .sheethead{flex-wrap:wrap;row-gap:6px}.app[data-cam=small] .status{order:5;flex-basis:100%}}
+.dot{width:9px;height:9px;border-radius:50%;background:#9FB3A8;flex:none;box-shadow:0 0 0 1.5px rgba(0,0,0,.18)}
 .status[data-kind=moving] .dot,.status[data-kind=warn] .dot{background:#F0B44C}
 .status[data-kind=asking] .dot{background:#F2E15A;animation:pulse 1s ease-in-out infinite}
 .status[data-kind=ok] .dot{background:#5FD08A}
@@ -56,7 +58,13 @@ body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible
 
 /* Answer sheet: engineering-pad grid */
 .sheet{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 20px 8px;background-color:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;background-position:-1px -1px}
-.qline{margin:0 0 8px;font-size:.95rem;color:var(--pencil)}
+.qline{margin:0 0 10px;font-size:.95rem;color:var(--pencil);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.sheethead{position:sticky;top:-18px;z-index:3;display:flex;align-items:center;gap:6px;margin:-18px -20px 14px;padding:8px 12px 8px 20px;background:var(--paper);border-bottom:1px solid var(--line)}
+.tool{flex:none;min-width:44px;min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font:inherit;font-size:.86rem;font-weight:700}
+.app[data-cam=small] .vf{position:absolute;z-index:4;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;width:96px;height:60px;flex:none;border-radius:10px;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.app[data-cam=small] .vf > :not(video){display:none !important}
+.app[data-cam=small] .sheet{padding-top:calc(env(safe-area-inset-top,0px) + 18px)}
+.app[data-cam=small] .sheethead{top:calc(-18px - env(safe-area-inset-top,0px));margin-top:calc(-18px - env(safe-area-inset-top,0px));padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px 120px;min-height:calc(env(safe-area-inset-top,0px) + 76px)}
 .q{background-image:linear-gradient(var(--hi),var(--hi));background-repeat:no-repeat;background-position:left center;background-size:0% 100%;-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:1px 2px;border-radius:2px}
 .q.fresh{animation:mark 1.7s ease-in-out}
 @keyframes mark{
@@ -65,8 +73,29 @@ body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible
   75%{background-size:100% 100%;background-position:right center;color:var(--hi-ink)}
   100%{background-size:0% 100%;background-position:right center;color:var(--pencil)}
 }
-.final{margin:0 0 6px;font-size:1.5rem;line-height:1.3;font-weight:700;overflow-wrap:anywhere}
-.work{margin:6px 0 10px;font-size:1.05rem;line-height:1.55;overflow-wrap:anywhere}
+.sheet{--fs:1}
+.ans{margin:0 0 6px}
+.final{margin:0 0 8px;font-size:calc(1.9rem * var(--fs));line-height:1.22;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
+.final mark{color:inherit;background:linear-gradient(transparent 55%,var(--hi) 55%,var(--hi) 90%,transparent 90%);padding:0 .06em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.final.mc{display:flex;align-items:center;gap:.4em}
+.opt{flex:none;display:inline-grid;place-items:center;width:1.55em;height:1.55em;border-radius:.4em;background:var(--hi);color:var(--hi-ink);font-size:1.05em}
+.final.part{font-size:calc(1.3rem * var(--fs))}
+.prov .final{color:var(--pencil)}
+.prov .final mark{background:none}
+.prov .opt{background:transparent;color:var(--pencil);box-shadow:inset 0 0 0 2px var(--pencil)}
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;font-size:.86rem;color:var(--pencil);overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--field);color:var(--ink);font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums}
+.chip.ok{background:var(--same);color:var(--same-ink);border-color:transparent}
+.chip.diff{background:var(--hi);color:var(--hi-ink);border-color:transparent}
+.chip.wait .dot{background:var(--hi);animation:pulse 1s ease-in-out infinite}
+.workbox{margin:6px 0 12px;border-top:1px dashed var(--line)}
+.workbox summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:var(--pencil);font-size:.92rem;font-weight:600;list-style:none}
+.workbox summary::-webkit-details-marker{display:none}
+.workbox summary::after{content:"";width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.workbox[open] summary::after{transform:rotate(225deg);margin-top:3px}
+#aBody.enter{animation:enter .22s ease-out}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}}
+.work{margin:0 0 8px;font-size:calc(1.05rem * var(--fs));line-height:1.55;overflow-wrap:anywhere}
 .empty{margin:0;color:var(--pencil);max-width:34ch}
 .meta{margin:4px 0 0;font-size:.82rem;color:var(--pencil);font-variant-numeric:tabular-nums}
 .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0}
@@ -79,7 +108,9 @@ body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible
 .badge.diff{background:var(--hi);color:var(--hi-ink)}
 .earlier{margin-top:22px;padding-top:12px;border-top:1px solid var(--line)}
 .earlier h2{margin:0 0 8px;font-size:.85rem;font-weight:600;color:var(--pencil)}
-.earlier button{display:block;width:100%;text-align:left;margin:0 0 6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.earlier button{display:flex;align-items:baseline;gap:12px;width:100%;text-align:left;margin:0 0 6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:.92rem}
+.eq{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pencil)}
+.ea{flex:none;max-width:48%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 
 /* Bottom controls */
 .stats{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;width:100%;margin:0;padding:6px 20px;border:0;border-top:1px solid var(--line);font:inherit;font-size:.8rem;color:var(--pencil);background:var(--bar);font-variant-numeric:tabular-nums;text-align:left}
@@ -124,18 +155,44 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
 .lim{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px}
 .lim legend{padding:0 4px;font-weight:600;font-size:.92rem}
 .version{margin-top:14px;color:var(--pencil);font-size:.8rem}
+.seg.four span{padding:11px 2px;font-size:.86rem}
+.checking{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:.88rem;color:var(--pencil)}
+.checking .dot{background:var(--hi);animation:pulse 1s ease-in-out infinite}
+.qdiff{margin:8px 0 0;font-size:.9rem;color:var(--pencil);overflow-wrap:anywhere}
+.qdiff .badge{margin-right:6px}
+.prov .final{color:var(--pencil)}
+.row2.gap{margin-top:10px}
+.vbtn{position:absolute;min-width:44px;height:40px;padding:0 13px;border:0;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:.86rem;font-weight:700;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);font-variant-numeric:tabular-nums}
+.vbtn.area{top:calc(env(safe-area-inset-top,0px) + 8px);right:12px}
+.vbtn.area[aria-pressed=true]{background:#F2E15A;color:#121810}
+.vbtn.zoom{right:12px;bottom:14px}
+.zoompanel{position:absolute;left:12px;right:12px;bottom:62px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.66);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.zoompanel input{width:100%;accent-color:#F2E15A}
+.zpresets{display:flex;gap:6px;margin-top:6px}
+.zpresets button{flex:1;min-height:40px;border:0;border-radius:999px;background:transparent;color:#fff;font:inherit;font-size:.86rem;font-weight:700}
+.zpresets button[aria-pressed=true]{background:#F2E15A;color:#121810}
+.lenses.dim{opacity:0;pointer-events:none}
+.drawlayer{position:absolute;inset:0;cursor:crosshair;touch-action:none;background:rgba(0,0,0,.25)}
+.drawbox{position:absolute;border:2px solid #F2E15A;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.4);pointer-events:none}
+.drawbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-size:.86rem;font-weight:600}
+.drawbar span{flex:1}
+.drawbar button{min-height:40px;padding:0 12px;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700}
 @media (orientation:landscape) and (max-height:540px){
-  .app{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto}
+  .app{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) auto auto}
+  .app[data-cam=small]{grid-template-columns:minmax(0,1fr)}
+  .app[data-cam=small] .sheet,.app[data-cam=small] .stats,.app[data-cam=small] .bar{grid-column:1}
+  .app[data-cam=small] .vf{grid-row:auto;height:60px;left:calc(env(safe-area-inset-left,0px) + 12px)}
+  .app[data-cam=small] .sheet{padding-left:calc(env(safe-area-inset-left,0px) + 16px)}
   .vf{grid-column:1;grid-row:1 / span 3;height:100%}
   .sheet{grid-column:2;grid-row:1;padding:12px calc(env(safe-area-inset-right,0px) + 16px) 6px 16px}
   .stats{grid-column:2;grid-row:2;padding-right:calc(env(safe-area-inset-right,0px) + 16px)}
   .bar{grid-column:2;grid-row:3;padding:6px calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 6px) 10px}
   .btn{min-height:44px}
-  .status{top:10px;left:calc(env(safe-area-inset-left,0px) + 10px)}
-  .final{font-size:1.3rem}
+  .final{font-size:calc(1.6rem * var(--fs))}
+  .sheethead{top:-12px;margin:-12px calc(-16px - env(safe-area-inset-right,0px)) 12px -16px;padding-left:16px;padding-right:calc(env(safe-area-inset-right,0px) + 12px)}
   dialog{max-height:92dvh}
 }
-@media (prefers-reduced-motion:reduce){.q.fresh{animation:none}.status[data-kind=asking] .dot{animation:none}}
+@media (prefers-reduced-motion:reduce){.q.fresh,#aBody.enter{animation:none}.status[data-kind=asking] .dot,.checking .dot,.chip.wait .dot{animation:none}}
 </style>
 </head>
 <body>
@@ -143,7 +200,16 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   <section class="vf" id="vf" aria-label="Camera">
     <video id="video" playsinline muted autoplay></video>
     <div class="crop" id="cropBox" hidden></div>
-    <div class="status" id="status" data-kind="off" role="status" aria-live="polite"><span class="dot"></span><span id="statusText">Camera off</span></div>
+    <button class="vbtn area" id="areaBtn" type="button" aria-pressed="false" aria-label="Reading area: drag a box over the part to read">Area</button>
+    <button class="vbtn zoom" id="zoomBtn" type="button" aria-label="Zoom">1.0×</button>
+    <div class="zoompanel" id="zoomPanel" hidden>
+      <input type="range" id="zoomRange" min="1" max="4" step="0.1" value="1" aria-label="Zoom level">
+      <div class="zpresets" id="zoomPresets"></div>
+    </div>
+    <div class="drawlayer" id="drawLayer" hidden>
+      <div class="drawbox" id="drawBox" hidden></div>
+      <div class="drawbar"><span>Drag over the part to read</span><button type="button" id="areaClear">Whole view</button><button type="button" id="areaCancel">Cancel</button></div>
+    </div>
     <div class="lenses" id="lenses" hidden></div>
     <div class="start" id="startPanel">
       <p>Point the camera at a question and hold still. The answer prints below.</p>
@@ -152,9 +218,17 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
     </div>
   </section>
 
-  <section class="sheet" id="sheet" aria-live="polite">
+  <section class="sheet" id="sheet">
+    <header class="sheethead">
+      <div class="status" id="status" data-kind="off" role="status"><span class="dot"></span><span id="statusText">Camera off</span></div>
+      <button class="tool" id="fsDown" type="button" aria-label="Smaller answer text">A−</button>
+      <button class="tool" id="fsUp" type="button" aria-label="Larger answer text">A+</button>
+      <button class="tool" id="camToggle" type="button" hidden>Small camera</button>
+    </header>
+    <div id="card" aria-live="polite">
     <p class="qline"><span class="q" id="qLine"></span></p>
     <div id="aBody"><p class="empty">No answer yet. Start the camera, add a key in Settings, then aim at any question.</p></div>
+    </div>
     <div class="earlier" id="earlierWrap" hidden>
       <h2>Earlier</h2>
       <div id="earlier"></div>
@@ -198,6 +272,15 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </div>
 
   <div class="field">
+    <span>Backup models, used when the main one hits a limit</span>
+    <div class="row2"><select id="bk0Prov" aria-label="First backup provider"></select><select id="bk0Model" aria-label="First backup model"></select></div>
+    <small id="bk0Note"></small>
+    <div class="row2 gap"><select id="bk1Prov" aria-label="Second backup provider"></select><select id="bk1Model" aria-label="Second backup model"></select></div>
+    <small id="bk1Note"></small>
+    <small>When the main model’s daily limit runs out, or it’s at its per-minute limit, the next backup answers instead, so nothing stalls. Each Gemini model has its own free limits; AI Studio’s rate-limit page lists them.</small>
+  </div>
+
+  <div class="field">
     <span>Second opinion, for comparing models</span>
     <div class="row2"><select id="altSelect" aria-label="Second-opinion provider"></select><select id="altModelSelect" aria-label="Second-opinion model"></select></div>
     <small>Each new question is also sent here, so it uses that provider’s calls too.</small>
@@ -214,7 +297,18 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
     <small>Auto keeps calculations brief, explains conceptual questions in a few sentences, and answers every part of multi-part questions.</small>
   </fieldset>
 
-  <label class="check"><input type="checkbox" id="thinkInput"><span>Think harder. Slower and uses more output tokens, but much better on puzzles and multi-step problems.</span></label>
+  <fieldset class="field">
+    <legend>Thinking</legend>
+    <div class="seg four">
+      <label><input type="radio" name="depth" value="minimal"><span>Off</span></label>
+      <label><input type="radio" name="depth" value="low"><span>Light</span></label>
+      <label><input type="radio" name="depth" value="medium"><span>Medium</span></label>
+      <label><input type="radio" name="depth" value="high"><span>Full</span></label>
+    </div>
+    <small>More thinking is slower but better on puzzles and multi-step problems. Full is the old Think harder. Light and Medium only apply to Gemini; other providers treat them like Full.</small>
+  </fieldset>
+
+  <label class="check"><input type="checkbox" id="quickInput"><span>Quick answer first. While the model thinks, a fast answer without thinking appears, then the thinking answer replaces it. Uses 2 calls per new question.</span></label>
 
   <label class="field">
     <span>Image sent to the model</span>
@@ -225,7 +319,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
     </select>
   </label>
 
-  <label class="check"><input type="checkbox" id="cropInput"><span>Only read what’s inside the center box. Helps when a lot is in view.</span></label>
+  <p class="field note">Zoom and the reading area are set on the camera view. Tap the zoom button to zoom in, and Area to drag a box over the part to read, such as just your screen.</p>
 
   <label class="field">
     <span>When to treat the view as a new question</span>
@@ -244,7 +338,7 @@ input[type=password],input[type=text],input[type=number],select{width:100%;min-w
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 3.4</p>
+  <p class="version">Version 3.7</p>
 </dialog>
 
 <script>
@@ -273,7 +367,7 @@ const STORE = 'liveanswer.v3', OLD = 'liveanswer.v1', USTORE = 'liveanswer.usage
 function defaults(){
   const keys = {}, models = {}, limits = {};
   IDS.forEach(p => { keys[p] = ''; models[p] = PROV[p].model; limits[p] = { cap:PROV[p].cap, rpm:PROV[p].rpm, pin:PROV[p].pin, pout:PROV[p].pout }; });
-  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, img:1024, crop:false, sens:'normal', deviceId:'' };
+  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, depth:'', quick:false, backups:[], zoom:1, area:null, camSize:'big', fs:1, showWork:false, img:1024, crop:false, sens:'normal', deviceId:'' };
 }
 let cfg = defaults();
 (function load(){
@@ -295,16 +389,29 @@ let cfg = defaults();
     }
   } catch (e) {}
 })();
+/* Thinking levels: v3.4 and earlier only had Think harder on or off */
+const LEVELS = ['minimal', 'low', 'medium', 'high'];
+if (!LEVELS.includes(cfg.depth)) cfg.depth = cfg.think ? 'high' : 'minimal';
+const thinks = lv => !!lv && lv !== 'minimal';
+if (cfg.crop && !cfg.area){ cfg.area = { x:0.15, y:0.15, w:0.7, h:0.7 }; }   // the old center box
+cfg.crop = false;
+if (!Array.isArray(cfg.backups)) cfg.backups = [];
+function levelLabel(p, lv){
+  if (lv === '') return 'default thinking';
+  if (!thinks(lv)) return 'no thinking';
+  return PROV[p].kind === 'gemini' ? { low:'light thinking', medium:'medium thinking', high:'full thinking' }[lv] : 'thinking on';
+}
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) {} }
 
 /* ---------- Tuning ---------- */
-const SENS = { calm:{ motion:9, change:12, steady:900 }, normal:{ motion:7, change:8, steady:450 }, eager:{ motion:5, change:5, steady:300 } };
-const TICK_MS = 150, MIN_GAP = 1200, MAX_INFLIGHT = 2, CROP = 0.7, W = 80, H = 60;
+// fine: share of the view whose detail must change to count as a new question
+const SENS = { calm:{ motion:9, change:12, steady:900, fine:0.04 }, normal:{ motion:7, change:8, steady:450, fine:0.02 }, eager:{ motion:5, change:5, steady:300, fine:0.012 } };
+const TICK_MS = 150, MIN_GAP = 1200, MAX_INFLIGHT = 2, FINE_EVERY = 300, W = 80, H = 60;
 
 const st = {
   stream:null, timer:null, paused:false, prev:null, anchor:null, stableSince:0, checked:false,
   lastCall:-1e9, backoff:{}, recent:{}, ctrl:null, altCtrls:new Set(), current:null, history:[],
-  noThink:new Set(), wake:null, kind:'off', lastIn:{}, inflight:new Set(), seq:0, shownSeq:0
+  noThink:new Set(), badLevel:{}, quickCtrls:new Set(), fine:null, fpend:null, lastFine:0, hwZoom:null, hi:false, wake:null, kind:'off', lastIn:{}, inflight:new Set(), seq:0, shownSeq:0
 };
 
 /* ---------- Usage tracking (per Pacific day, saved on the phone) ---------- */
@@ -313,7 +420,8 @@ function pacificDay(){
   catch (e) { return new Date().toISOString().slice(0, 10); }
 }
 function blankBy(){ const b = {}; IDS.forEach(p => { b[p] = { calls:0, inTok:0, outTok:0, answered:0 }; }); return b; }
-function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, inTok:0, outTok:0, estTok:0, by:blankBy() }; }
+function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, quick:0, qSame:0, qDiff:0, models:{}, out:{},
+           qFirstSum:0, qN:0, firstSum:0, doneSum:0, tN:0, inTok:0, outTok:0, estTok:0, by:blankBy() }; }
 let usage = blankUsage();
 try {
   const u = JSON.parse(localStorage.getItem(USTORE) || 'null');
@@ -326,12 +434,14 @@ try {
     }
   }
 } catch (e) {}
+const mkey = (p, m) => p + ':' + (m || '');
+if (!Object.keys(usage.models).length && usage.by[cfg.prov] && usage.by[cfg.prov].calls) usage.models[mkey(cfg.prov, cfg.models[cfg.prov])] = usage.by[cfg.prov].calls;
 function saveUsage(){ try { localStorage.setItem(USTORE, JSON.stringify(usage)); } catch (e) {} }
 function rollDay(){ if (usage.day !== pacificDay()){ usage = blankUsage(); saveUsage(); } }
 function cost(){ return IDS.reduce((s, p) => s + (usage.by[p].inTok * Number(cfg.limits[p].pin) + usage.by[p].outTok * Number(cfg.limits[p].pout)) / 1e6, 0); }
 function money(x){ return '$' + (x < 0.01 ? x.toFixed(4) : x.toFixed(2)); }
 function kfmt(n){ return n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
-function count(p){ rollDay(); usage.calls++; usage.by[p].calls++; saveUsage(); renderStats(); }
+function count(p, m){ rollDay(); usage.calls++; usage.by[p].calls++; const k = mkey(p, m); usage.models[k] = (usage.models[k] || 0) + 1; saveUsage(); renderStats(); }
 function applyUsage(m, u){
   m.seen = true;
   if (u.promptTokenCount) m.inTok = u.promptTokenCount;
@@ -352,16 +462,22 @@ function bill(p, m, kind){
 function setStatus(kind, text){ st.kind = kind; $('status').dataset.kind = kind; $('statusText').textContent = text; }
 function renderStats(){
   rollDay();
-  const p = cfg.prov, b = usage.by[p], cap = cfg.limits[p].cap;
+  const p = cfg.prov, k = mkey(p, cfg.models[p]), cap = cfg.limits[p].cap, used = usage.models[k] || 0;
   const c = $('statCalls');
-  c.textContent = `${b.calls} of ${cap} ${PROV[p].name} calls today`;
-  c.className = b.calls >= cap * 0.9 ? 'warnText' : '';
+  if (usage.out[k] || used >= cap){
+    const bk = candidates().slice(1).find(b => cfg.keys[b.p] && !usage.out[mkey(b.p, b.model)]);
+    c.textContent = bk ? `Main limit used up, on backup ${shortModel(bk.model)}: ${usage.models[mkey(bk.p, bk.model)] || 0} calls` : `${PROV[p].name} daily limit used up`;
+    c.className = 'warnText';
+  } else {
+    c.textContent = `${used} of ${cap} ${PROV[p].name} calls today`;
+    c.className = used >= cap * 0.9 ? 'warnText' : '';
+  }
   $('statTokens').textContent = `${kfmt(usage.inTok + usage.outTok)} tokens, ≈${money(cost())} if paid`;
   $('statSaved').textContent = `${usage.saved} reused free`;
   if (dlg.open) renderUsage();
 }
 function renderUsage(){
-  const own = usage.calls - usage.alt;
+  const own = usage.calls - usage.alt - (usage.quick || 0);
   const wasted = usage.dup + usage.none + usage.blurry + usage.aborted;
   const pct = own > 0 ? Math.round(100 * wasted / own) : 0;
   const rows = [
@@ -374,14 +490,24 @@ function renderUsage(){
     ['Stopped early', usage.aborted],
     ['Errors', usage.errors],
     ['Second-opinion calls', usage.alt],
+    ['Quick-answer calls', usage.quick || 0],
     ['Main calls without a new answer', `${pct}%`],
     ['Input tokens', kfmt(usage.inTok)],
     ['Output tokens, incl. thinking', kfmt(usage.outTok)],
     ['Cost if on paid keys', money(cost())]
   ];
+  const sec = ms => (ms / 1000).toFixed(1) + ' s';
+  if (usage.qN) rows.push(['Average wait for the quick answer', sec(usage.qFirstSum / usage.qN)]);
+  if (usage.tN) rows.push([usage.qN ? 'Average wait for the thinking answer' : 'Average wait for the answer',
+    `${sec(usage.firstSum / usage.tN)} first words, ${sec(usage.doneSum / usage.tN)} finished`]);
+  if (usage.qSame + usage.qDiff) rows.push(['Quick answer matched the thinking answer', `${usage.qSame} of ${usage.qSame + usage.qDiff}`]);
+  Object.keys(usage.models).forEach(k => {
+    const i = k.indexOf(':'), p = k.slice(0, i), m = k.slice(i + 1);
+    if (PROV[p] && usage.models[k]) rows.push([`${PROV[p].name} ${shortModel(m)}`, `${usage.models[k]} of ${cfg.limits[p].cap} calls${usage.out[k] ? ', free limit used up' : ''}`]);
+  });
   IDS.forEach(p => {
     const b = usage.by[p];
-    if (b.calls) rows.push([PROV[p].name, `${b.calls} of ${cfg.limits[p].cap} calls, ${kfmt(b.inTok + b.outTok)} tokens, ≈${b.calls ? Math.round(b.inTok / b.calls) : 0} in per call`]);
+    if (b.calls) rows.push([`${PROV[p].name} tokens`, `${kfmt(b.inTok + b.outTok)}, ≈${Math.round(b.inTok / b.calls)} in per call`]);
   });
   const tb = $('usageTable');
   tb.innerHTML = '';
@@ -393,19 +519,39 @@ function renderUsage(){
   });
 }
 
-/* ---------- Call gate: daily cap, per-minute pace, provider backoff ---------- */
+/* ---------- Call gate: daily cap, per-minute pace, backoff, per model ---------- */
+// Google's free limits are per model, so each model is counted and paced on its own.
 // Returns null if a call may go now, '' to wait silently, or a message to show.
-function gate(p, now, force){
+function gate(p, m, now, force){
   rollDay();
-  const lim = cfg.limits[p], b = usage.by[p], name = PROV[p].name;
-  if (b.calls >= lim.cap) return `${name} daily limit of ${lim.cap} calls reached. Change it in Settings.`;
-  if (now < (st.backoff[p] || 0)) return `${name} limit hit, retrying in ${Math.ceil((st.backoff[p] - now) / 1000)} s`;
-  const rec = st.recent[p] = (st.recent[p] || []).filter(t => now - t < 60000);
-  if (rec.length >= lim.rpm) return `Pacing at ${lim.rpm} ${name} calls a minute, next in ${Math.ceil((60000 - (now - rec[0])) / 1000)} s`;
+  const lim = cfg.limits[p], k = mkey(p, m), name = `${PROV[p].name} ${shortModel(m)}`.trim();
+  if (usage.out[k]) return `${name}: free limit used up for today`;
+  if ((usage.models[k] || 0) >= lim.cap) return `${name}: daily cap of ${lim.cap} calls reached. Change it in Settings.`;
+  if (now < (st.backoff[k] || 0)) return `${name} limit hit, retrying in ${Math.ceil((st.backoff[k] - now) / 1000)} s`;
+  const rec = st.recent[k] = (st.recent[k] || []).filter(t => now - t < 60000);
+  if (rec.length >= lim.rpm) return `Pacing at ${lim.rpm} calls a minute, next in ${Math.ceil((60000 - (now - rec[0])) / 1000)} s`;
   if (!force && now - st.lastCall < MIN_GAP) return '';
   return null;
 }
-function noteCall(p, now){ (st.recent[p] = st.recent[p] || []).push(now); }
+function noteCall(p, m, now){ const k = mkey(p, m); (st.recent[k] = st.recent[k] || []).push(now); }
+function candidates(){
+  const list = [{ p:cfg.prov, model:cfg.models[cfg.prov] }, ...(cfg.backups || [])];
+  return list.filter((c, i) => c && PROV[c.p] && c.model && list.findIndex(o => o && o.p === c.p && o.model === c.model) === i);
+}
+// The main model, or else the first backup that may take a call now. Returns { c } or { msg } ('' means wait quietly).
+function pick(now, force){
+  const list = candidates();
+  if (!list.length) return { msg:'Pick a model in Settings' };
+  let msg = null;
+  for (const c of list){
+    if (!cfg.keys[c.p]){ if (msg === null) msg = `Add your ${PROV[c.p].name} key in Settings`; continue; }
+    const b = gate(c.p, c.model, now, force);
+    if (b === null) return { c };
+    if (b === '') return { msg:'' };
+    if (msg === null) msg = b;
+  }
+  return { msg:msg || '' };
+}
 
 /* ---------- Camera ---------- */
 const LENSES = [
@@ -420,7 +566,8 @@ async function startCamera(deviceId){
     return;
   }
   stopCamera();
-  const v = { width:{ ideal:1920 }, height:{ ideal:1080 } };
+  const hi = !st.hwZoom && digitalZoom() > 1.25;   // digital zoom crops, so ask for more pixels
+  const v = hi ? { width:{ ideal:3840 }, height:{ ideal:2160 } } : { width:{ ideal:1920 }, height:{ ideal:1080 } };
   if (deviceId) v.deviceId = { exact:deviceId }; else v.facingMode = { ideal:'environment' };
   let stream;
   try {
@@ -440,8 +587,17 @@ async function startCamera(deviceId){
   const tr = stream.getVideoTracks()[0];
   const s = tr && tr.getSettings ? tr.getSettings() : {};
   cfg.deviceId = s.deviceId || deviceId || ''; save();
+  st.hi = hi;
+  const caps = tr && tr.getCapabilities ? tr.getCapabilities() : {};
+  st.hwZoom = caps && caps.zoom && caps.zoom.max > caps.zoom.min ? caps.zoom : null;
+  if (st.hwZoom){
+    const z = Math.min(Math.min(st.hwZoom.max, 8), Math.max(st.hwZoom.min, Number(cfg.zoom) || 1));
+    try { await tr.applyConstraints({ advanced:[{ zoom:z }] }); cfg.zoom = z; } catch (e) { st.hwZoom = null; }
+  }
+  showZoom();
   $('startPanel').hidden = true;
-  st.prev = null; st.anchor = null; st.checked = false;
+  applyLayout();
+  st.prev = null; st.still = null; st.anchor = null; st.checked = false; st.fpend = null;
   st.stableSince = performance.now() + 800;
   await listCameras();
   layoutCrop();
@@ -472,7 +628,7 @@ async function listCameras(){
     b.type = 'button'; b.textContent = L.label;
     b.setAttribute('aria-label', L.name);
     b.setAttribute('aria-pressed', String(L.dev.deviceId === cfg.deviceId));
-    b.addEventListener('click', () => { if (L.dev.deviceId !== cfg.deviceId) startCamera(L.dev.deviceId); });
+    b.addEventListener('click', () => { if (L.dev.deviceId !== cfg.deviceId){ cfg.area = null; save(); startCamera(L.dev.deviceId); } });
     box.append(b);
   });
 }
@@ -490,77 +646,249 @@ document.addEventListener('visibilitychange', () => {
   if (!t || t.readyState === 'ended') startCamera(cfg.deviceId); else keepAwake();
 });
 
-/* ---------- Center box overlay ---------- */
+/* ---------- Zoom and reading area ---------- */
+// Hardware zoom when the browser exposes it, otherwise digital zoom (the preview is scaled and the photo cropped).
+const vf = $('vf');
+function digitalZoom(){ return st.hwZoom ? 1 : Math.max(1, Number(cfg.zoom) || 1); }
+function zoomRange(){ return st.hwZoom ? { min:st.hwZoom.min, max:Math.min(st.hwZoom.max, 8), step:st.hwZoom.step || 0.1 } : { min:1, max:4, step:0.1 }; }
 function videoRect(){
   const vw = video.videoWidth, vh = video.videoHeight, cw = video.clientWidth, ch = video.clientHeight;
   if (!vw || !vh) return null;
   const s = Math.min(cw / vw, ch / vh), w = vw * s, h = vh * s;
   return { x:(cw - w) / 2, y:(ch - h) / 2, w, h };
 }
+// Screen point in the camera view <-> position in the video frame (0..1), allowing for digital zoom.
+function viewToFrame(px, py){
+  const r = videoRect(); if (!r) return null;
+  const z = digitalZoom(), cx = video.clientWidth / 2, cy = video.clientHeight / 2;
+  const ux = cx + (px - cx) / z, uy = cy + (py - cy) / z;
+  return { x:Math.min(1, Math.max(0, (ux - r.x) / r.w)), y:Math.min(1, Math.max(0, (uy - r.y) / r.h)) };
+}
+function frameToView(nx, ny){
+  const r = videoRect(); if (!r) return null;
+  const z = digitalZoom(), cx = video.clientWidth / 2, cy = video.clientHeight / 2;
+  return { x:cx + (r.x + nx * r.w - cx) * z, y:cy + (r.y + ny * r.h - cy) * z };
+}
 function layoutCrop(){
-  const box = $('cropBox'), r = videoRect();
-  if (!cfg.crop || !r){ box.hidden = true; return; }
-  box.hidden = false;
-  box.style.left = (r.x + r.w * (1 - CROP) / 2) + 'px';
-  box.style.top = (r.y + r.h * (1 - CROP) / 2) + 'px';
-  box.style.width = (r.w * CROP) + 'px';
-  box.style.height = (r.h * CROP) + 'px';
+  const box = $('cropBox');
+  const a = cfg.area, p0 = a && frameToView(a.x, a.y), p1 = a && frameToView(a.x + a.w, a.y + a.h);
+  if (!p0 || !p1){ box.hidden = true; }
+  else {
+    box.hidden = false;
+    box.style.left = p0.x + 'px'; box.style.top = p0.y + 'px';
+    box.style.width = (p1.x - p0.x) + 'px'; box.style.height = (p1.y - p0.y) + 'px';
+  }
+  $('areaBtn').textContent = cfg.area ? 'Area set' : 'Area';
+  $('areaBtn').setAttribute('aria-pressed', String(!!cfg.area));
 }
 video.addEventListener('loadedmetadata', layoutCrop);
 video.addEventListener('resize', layoutCrop);
 window.addEventListener('resize', layoutCrop);
 
+function resetView(){ st.prev = null; st.still = null; st.anchor = null; st.fpend = null; st.checked = false; st.stableSince = performance.now() + 300; }
+function showZoom(){
+  const z = st.hwZoom ? (Number(cfg.zoom) || st.hwZoom.min) : digitalZoom();
+  $('zoomBtn').textContent = z.toFixed(1) + '×';
+  video.style.transform = st.hwZoom || z <= 1 ? '' : `scale(${z})`;
+  const R = zoomRange(), rg = $('zoomRange');
+  rg.min = R.min; rg.max = R.max; rg.step = R.step; rg.value = z;
+  const box = $('zoomPresets');
+  box.innerHTML = '';
+  [R.min, 1.5, 2, 3, 4, 6].filter((v, i, a) => v >= R.min && v <= R.max && a.indexOf(v) === i).forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = (Math.round(v * 10) / 10) + '×';
+    b.setAttribute('aria-pressed', String(Math.abs(v - z) < 0.05));
+    b.addEventListener('click', () => setZoom(v, true));
+    box.append(b);
+  });
+  layoutCrop();
+}
+async function setZoom(z, done){
+  const R = zoomRange();
+  z = Math.min(R.max, Math.max(R.min, Math.round(z * 10) / 10));
+  const before = digitalZoom();
+  cfg.zoom = z;
+  if (st.hwZoom && st.stream){
+    const tr = st.stream.getVideoTracks()[0];
+    try { await tr.applyConstraints({ advanced:[{ zoom:z }] }); } catch (e) {}
+    if (cfg.area){ cfg.area = null; }   // the picture itself changed, so an old area no longer fits
+  }
+  showZoom();
+  resetView();
+  if (done){
+    save();
+    // Digital zoom crops the picture, so ask the camera for more pixels once zoom goes past 1.25×.
+    if (!st.hwZoom && st.stream && (digitalZoom() > 1.25) !== !!st.hi) startCamera(cfg.deviceId);
+  }
+  if (before !== digitalZoom() && !done) layoutCrop();
+}
+$('zoomBtn').addEventListener('click', () => { const p = $('zoomPanel'); p.hidden = !p.hidden; $('lenses').classList.toggle('dim', !p.hidden); });
+$('zoomRange').addEventListener('input', e => setZoom(Number(e.target.value), false));
+$('zoomRange').addEventListener('change', e => setZoom(Number(e.target.value), true));
+
+// Reading area: drag a box over the part of the view to read; everything outside it is ignored.
+(function areaDrawing(){
+  const layer = $('drawLayer'), box = $('drawBox');
+  let start = null;
+  const pos = e => { const r = vf.getBoundingClientRect(); return { x:e.clientX - r.left, y:e.clientY - r.top }; };
+  const close = () => { layer.hidden = true; box.hidden = true; start = null; };
+  $('areaBtn').addEventListener('click', () => { layer.hidden = false; box.hidden = true; $('zoomPanel').hidden = true; });
+  $('areaCancel').addEventListener('click', close);
+  $('areaClear').addEventListener('click', () => { cfg.area = null; save(); close(); layoutCrop(); resetView(); });
+  layer.addEventListener('pointerdown', e => {
+    if (e.target.closest('.drawbar')) return;
+    start = pos(e); layer.setPointerCapture(e.pointerId);
+    Object.assign(box.style, { left:start.x + 'px', top:start.y + 'px', width:'0px', height:'0px' }); box.hidden = false;
+  });
+  layer.addEventListener('pointermove', e => {
+    if (!start) return;
+    const p = pos(e);
+    Object.assign(box.style, { left:Math.min(p.x, start.x) + 'px', top:Math.min(p.y, start.y) + 'px', width:Math.abs(p.x - start.x) + 'px', height:Math.abs(p.y - start.y) + 'px' });
+  });
+  layer.addEventListener('pointerup', e => {
+    if (!start) return;
+    const p = pos(e), a = viewToFrame(Math.min(p.x, start.x), Math.min(p.y, start.y)), b = viewToFrame(Math.max(p.x, start.x), Math.max(p.y, start.y));
+    close();
+    if (!a || !b || b.x - a.x < 0.08 || b.y - a.y < 0.08) return;   // too small: treat as a stray tap
+    cfg.area = { x:a.x, y:a.y, w:b.x - a.x, h:b.y - a.y };
+    save(); layoutCrop(); resetView();
+    setStatus('idle', 'Reading area set');
+  });
+})();
+
 /* ---------- Change detection (on-device, free) ---------- */
-const mid = document.createElement('canvas'); mid.width = W * 4; mid.height = H * 4;
-const midx = mid.getContext('2d');
+// Coarse 80×60 picture: motion and alignment. Fine 400×300 detail: new text in the same layout.
+const K = 5, FW = W * K, FH = H * K, CS = 20, CX = FW / CS, CY = FH / CS, NCELL = CX * CY;
+const mid = document.createElement('canvas'); mid.width = FW; mid.height = FH;
+const midx = mid.getContext('2d', { willReadFrequently:true });
 const sm = document.createElement('canvas'); sm.width = W; sm.height = H;
 const smx = sm.getContext('2d', { willReadFrequently:true });
 midx.imageSmoothingEnabled = smx.imageSmoothingEnabled = true;
 midx.imageSmoothingQuality = smx.imageSmoothingQuality = 'high';
 function srcRect(){
   const vw = video.videoWidth, vh = video.videoHeight;
-  if (!cfg.crop) return [0, 0, vw, vh];
-  const w = vw * CROP, h = vh * CROP;
-  return [(vw - w) / 2, (vh - h) / 2, w, h];
+  let x = 0, y = 0, w = vw, h = vh;
+  if (cfg.area){ x = cfg.area.x * vw; y = cfg.area.y * vh; w = cfg.area.w * vw; h = cfg.area.h * vh; }
+  const z = digitalZoom();
+  if (z > 1){   // keep to what the zoomed preview shows
+    const zw = vw / z, zh = vh / z, zx = (vw - zw) / 2, zy = (vh - zh) / 2;
+    const x0 = Math.max(x, zx), y0 = Math.max(y, zy), x1 = Math.min(x + w, zx + zw), y1 = Math.min(y + h, zy + zh);
+    if (x1 - x0 > 8 && y1 - y0 > 8){ x = x0; y = y0; w = x1 - x0; h = y1 - y0; } else { x = zx; y = zy; w = zw; h = zh; }
+  }
+  return [x, y, w, h];
 }
 function grab(){
   if (video.readyState < 2 || !video.videoWidth) return null;
   const [x, y, w, h] = srcRect();
-  midx.drawImage(video, x, y, w, h, 0, 0, mid.width, mid.height);
+  midx.drawImage(video, x, y, w, h, 0, 0, FW, FH);
+  st.fine = null;   // fine detail of this frame is computed only if needed
   smx.drawImage(mid, 0, 0, W, H);
   const d = smx.getImageData(0, 0, W, H).data;
   const g = new Uint8ClampedArray(W * H);
   for (let i = 0, j = 0; i < d.length; i += 4, j++) g[j] = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
   return g;
 }
+// Horizontal and vertical edges of the fine picture (lightly smoothed, so tiny hand shake doesn't matter).
+function fineNow(){
+  if (st.fine) return st.fine;
+  const d = midx.getImageData(0, 0, FW, FH).data, n = FW * FH;
+  const lum = new Float32Array(n), sm3 = new Float32Array(n);
+  for (let i = 0, j = 0; j < n; i += 4, j++) lum[j] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+  for (let y = 1; y < FH - 1; y++) for (let x = 1, i = y * FW + 1; x < FW - 1; x++, i++)
+    sm3[i] = (lum[i - FW - 1] + lum[i - FW] + lum[i - FW + 1] + lum[i - 1] + lum[i] + lum[i + 1] + lum[i + FW - 1] + lum[i + FW] + lum[i + FW + 1]) / 9;
+  const gx = new Int8Array(n), gy = new Int8Array(n);
+  const cl = v => v > 127 ? 127 : v < -127 ? -127 : v;
+  for (let y = 2; y < FH - 2; y++) for (let x = 2, i = y * FW + 2; x < FW - 2; x++, i++){
+    gx[i] = cl(Math.round((sm3[i + 2] - sm3[i - 2]) / 2));
+    gy[i] = cl(Math.round((sm3[i + 2 * FW] - sm3[i - 2 * FW]) / 2));
+  }
+  return (st.fine = { gx, gy });
+}
 function meanOf(a){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
 // Smallest average difference after sliding up to R pixels; hand drift becomes a small shift and is ignored.
-function diffShift(a, b, R, cap){
+function diffShift(a, b, R, cap){ return bestShift(a, b, R, cap).d; }
+function bestShift(a, b, R, cap){
   const off = meanOf(a) - meanOf(b);
-  let best = Infinity;
+  let best = Infinity, bx = 0, by = 0;
   for (let dy = -R; dy <= R; dy++){
     const y0 = Math.max(0, -dy), y1 = Math.min(H, H - dy);
     for (let dx = -R; dx <= R; dx++){
       const x0 = Math.max(0, -dx), x1 = Math.min(W, W - dx), rw = x1 - x0, n = rw * (y1 - y0);
-      const stop = Math.min(best, cap) * n;
+      const stop = Math.min(best, cap == null ? Infinity : cap) * n;
       let s = 0;
       for (let y = y0; y < y1 && s <= stop; y++){
         let ia = y * W + x0, ib = (y + dy) * W + x0 + dx;
         for (let k = 0; k < rw; k++) s += Math.abs(a[ia++] - b[ib++] - off);
       }
-      if (s <= stop){ const dd = s / n; if (dd < best) best = dd; }
-      if (best < 0.5) return best;
+      if (s <= stop){ const dd = s / n; if (dd < best){ best = dd; bx = dx; by = dy; } }
+      if (best < 0.5) return { d:best, dx:bx, dy:by };
     }
   }
-  return best;
+  return { d:best, dx:bx, dy:by };
 }
-function makeSig(g){ return g ? { g } : null; }
+// Share of the fine cells whose detail changed between frame a and reference b (b shifted by dx, dy).
+// Each cell is measured over a slightly larger window, so an edge sitting on a cell border can't flip it.
+const CM = 4;
+function fineFrac(a, b, dx, dy){
+  let changed = 0, counted = 0;
+  for (let cy = 0; cy < CY; cy++) for (let cx = 0; cx < CX; cx++){
+    let n = 0, ax = 0, bx = 0, xx = 0, ay = 0, by = 0, yy = 0;
+    const ys = Math.max(2, cy * CS - CM), ye = Math.min(FH - 2, cy * CS + CS + CM), xs = Math.max(2, cx * CS - CM), xe = Math.min(FW - 2, cx * CS + CS + CM);
+    for (let y = ys; y < ye; y++){
+      const yb = y + dy; if (yb < 2 || yb >= FH - 2) continue;
+      for (let x = xs; x < xe; x++){
+        const xb = x + dx; if (xb < 2 || xb >= FW - 2) continue;
+        const i = y * FW + x, j = yb * FW + xb;
+        const p = a.gx[i], q = b.gx[j], r = a.gy[i], s = b.gy[j];
+        ax += p * p; bx += q * q; xx += p * q; ay += r * r; by += s * s; yy += r * s; n++;
+      }
+    }
+    if (n < (ye - ys) * (xe - xs) * 0.5) continue;   // mostly outside the overlap
+    counted++;
+    if (cellChanged(ax / n, bx / n, xx / n) || cellChanged(ay / n, by / n, yy / n)) changed++;
+  }
+  return counted ? changed / NCELL : 0;
+}
+// A cell changed if it has real detail and that detail no longer lines up with the reference.
+// Correlation ignores contrast, so focus, exposure and screen flicker don't count; detail that
+// appears on a blank area has near-zero correlation, so it counts.
+const E_DETAIL = 20;
+function cellChanged(ea, eb, eab){
+  if (Math.max(ea, eb) < E_DETAIL) return false;
+  return eab / Math.sqrt(Math.max(ea * eb, 1e-9)) < 0.5;
+}
+function bestFineShift(a, b, sx, sy){
+  let best = Infinity, bx = sx, by = sy;
+  for (let ey = -3; ey <= 3; ey++) for (let ex = -3; ex <= 3; ex++){
+    const dx = sx + ex, dy = sy + ey;
+    let s = 0, n = 0;
+    for (let y = 8; y < FH - 8; y += 4){
+      const yb = y + dy; if (yb < 2 || yb >= FH - 2) continue;
+      for (let x = 8; x < FW - 8; x += 4){
+        const xb = x + dx; if (xb < 2 || xb >= FW - 2) continue;
+        const i = y * FW + x, j = yb * FW + xb;
+        s += Math.abs(a.gx[i] - b.gx[j]) + Math.abs(a.gy[i] - b.gy[j]); n++;
+      }
+    }
+    if (n && s / n < best){ best = s / n; bx = dx; by = dy; }
+  }
+  return { dx:bx, dy:by };
+}
+// How much of the view differs from a saved view {g, f}: 0 = same, 1 = everything.
+function viewChange(g, f, ref){
+  if (!ref || !ref.f) return 1;
+  const s = bestShift(g, ref.g, 4);
+  const t = bestFineShift(f, ref.f, s.dx * K, s.dy * K);
+  return fineFrac(f, ref.f, t.dx, t.dy);
+}
+function makeSig(g){ return g ? { g, f:fineNow() } : null; }
+function grabSig(){ return makeSig(grab()); }
 function findBySig(sig, T){
   const lim = T.change * 0.8;
   const pool = (st.current && st.current.done ? [st.current, ...st.history] : st.history).slice(0, 10);
   for (const h of pool){
     if (!h.done || !h.sigs) continue;
-    for (const s of h.sigs) if (diffShift(sig.g, s.g, 4, lim) < lim) return h;
+    for (const s of h.sigs) if (diffShift(sig.g, s.g, 4, lim) < lim && viewChange(sig.g, sig.f, s) < T.fine) return h;
   }
   return null;
 }
@@ -568,32 +896,53 @@ function addSig(e, sig){
   if (!e || !sig) return;
   e.sigs = e.sigs || [];
   e.sigs.push(sig);
-  if (e.sigs.length > 3) e.sigs.shift();
+  if (e.sigs.length > 2) e.sigs.shift();
 }
 
 function tick(){
-  if (!st.stream || st.paused || document.hidden || dlg.open) return;
+  if (!st.stream || st.paused || document.hidden || dlg.open || !$('drawLayer').hidden) return;
   const g = grab(); if (!g) return;
   const now = performance.now();
   const T = SENS[cfg.sens] || SENS.normal;
-  if (st.prev && diffShift(g, st.prev, 1, T.motion) > T.motion){
-    st.stableSince = Math.max(st.stableSince, now);
-    st.checked = false;
-    if (!st.inflight.size) setStatus('moving', 'Hold steady…');
+  // Motion (for the status line): a jump since the last frame, or slow drift since the view went still.
+  const jump = st.prev && diffShift(g, st.prev, 1, T.motion) > T.motion;
+  const drift = !jump && st.still && diffShift(g, st.still, 1, T.motion) > T.motion;
+  if (jump || drift || !st.still){
+    if ((jump || drift) && !st.inflight.size) setStatus('moving', 'Hold steady…');
+    st.still = g;
   }
   st.prev = g;
-  if (now - st.stableSince < T.steady) return;
+  if (now < st.stableSince) return;   // camera just started or zoom changed
 
-  if (st.anchor && diffShift(g, st.anchor, 4, T.change) <= T.change){
-    if (st.kind === 'moving' && !st.inflight.size) setStatus('idle', st.current ? 'Same view, answer kept' : 'Point at a question');
+  // Is this a new view? The coarse picture catches big changes; the fine detail catches new text in the same layout.
+  let frac = 1;
+  if (st.anchor && diffShift(g, st.anchor.g, 4, T.change) <= T.change){
+    if (!st.fpend && now - (st.lastFine || 0) < FINE_EVERY) return;
+    st.lastFine = now;
+    frac = viewChange(g, fineNow(), st.anchor);
+    if (frac < T.fine){
+      st.fpend = null;
+      if (st.kind === 'moving' && !st.inflight.size) setStatus('idle', st.current ? 'Same view, answer kept' : 'Point at a question');
+      return;
+    }
+  }
+  // It differs from the last question. Ask only once it has held still for a moment,
+  // so a slow scroll or a page that is still loading is never sent half-way.
+  const P = st.fpend;
+  const moved = !P || diffShift(g, P.g, 1, T.motion * 0.5) > T.motion * 0.5 || viewChange(g, fineNow(), P) >= T.fine;
+  if (moved){
+    st.fpend = { g, f:fineNow(), t:now, frac };
+    st.checked = false;
+    if (!st.inflight.size) setStatus('moving', P ? 'Hold steady…' : 'New view, reading…');
     return;
   }
-  if (st.inflight.size >= MAX_INFLIGHT) return;   // two answers already on the way; check again once one lands
+  if (now - P.t < T.steady) return;
+  st.fpend = null;
   const sig = makeSig(g);
   const hit = st.checked ? null : findBySig(sig, T);
   st.checked = true;
   if (hit){
-    st.anchor = g;
+    st.anchor = sig;
     if (hit !== st.current){
       st.shownSeq = st.seq + 1;   // answers still arriving for older views stay in Earlier
       show(hit, true);
@@ -602,12 +951,15 @@ function tick(){
     } else setStatus('idle', 'Same view, answer kept');
     return;
   }
-  const p = cfg.prov;
-  if (!cfg.keys[p]){ setStatus('warn', `Add your ${PROV[p].name} key in Settings`); return; }
-  const block = gate(p, now, false);
-  if (block !== null){ if (block) setStatus('warn', block); return; }
-  st.anchor = g;
-  ask(false, sig);
+  const pk = pick(now, false);
+  if (!pk.c){ if (pk.msg) setStatus('warn', pk.msg); st.fpend = P; return; }
+  // Two answers are already on the way: drop the oldest, since you have moved past that view.
+  if (st.inflight.size >= MAX_INFLIGHT){
+    const oldest = st.inflight.values().next().value;
+    oldest.abort(); st.inflight.delete(oldest);
+  }
+  st.anchor = sig;
+  ask(false, sig, { ...pk.c, frac:Math.max(frac, P.frac) });
 }
 
 /* ---------- Capture ---------- */
@@ -652,21 +1004,22 @@ function remember(e){
 /* ---------- Prompt ---------- */
 const nativeReason = (p, model) => p === 'groq' && /qwen3|gpt-oss/i.test(model || '');
 const VISION_RE = /qwen3\.[5-9]|vision|llama-4|scout|maverick|llava|muse-spark|-vl\b|vl-/i;
-function instructions(p){
-  const textThink = cfg.think && PROV[p].kind !== 'gemini' && !nativeReason(p, cfg.models[p]);
+const QLINE = '<the question on one line, without headings, numbering or labels, under 220 characters. Include its key details, such as numbers, names and short answer options, so two different questions never give the same line. For a picture puzzle, add a few words describing the figures.>';
+function instructions(p, lv){
+  const textThink = thinks(lv) && PROV[p].kind !== 'gemini' && !nativeReason(p, cfg.models[p]);
   const len = {
     auto:'Match the length to the question: just the result for a simple calculation, up to 4 short lines of working for a multi-step problem, and 2 to 4 sentences for a conceptual or written question.',
     short:'Keep it short: at most 3 short lines of working, only if they help.',
     steps:'Give a clear step-by-step solution in at most 8 short steps.'
   }[cfg.detail] || '';
   const format = textThink
-    ? ['QUESTION: <only the question itself, on one line, without headings, numbering or labels, under 200 characters>',
+    ? ['QUESTION: ' + QLINE,
        'WORKING:', '<reason step by step, as briefly as you can>',
        'ANSWER: <the final answer on one line>']
-    : ['QUESTION: <only the question itself, on one line, without headings, numbering or labels, under 200 characters>',
+    : ['QUESTION: ' + QLINE,
        'ANSWER:', '<the final answer alone on the first line>', '<optional working>'];
   return [
-    'You are reading one photo taken by a phone camera. Find the main question, problem, puzzle or task in it (printed, handwritten, drawn or on a screen) and answer it.',
+    'You are reading one photo taken by a phone camera. Find the main question, problem, puzzle or task in it (printed, handwritten, drawn or on a screen) and answer it. It can be on any subject, and can also be a request such as translate, summarize, define or write.',
     'Reply in exactly this format and nothing else:', ...format,
     'Rules:',
     '- If several questions are visible, answer the one nearest the center or the most prominent.',
@@ -679,15 +1032,16 @@ function instructions(p){
     '- If the text is too blurry or cut off to read, reply with only: BLURRY'
   ].join('\n');
 }
-function maxTokens(p){
-  if (cfg.think) return PROV[p].kind === 'gemini' || nativeReason(p, cfg.models[p]) ? 8192 : 2000;
+function maxTokens(p, lv){
+  if (thinks(lv)) return PROV[p].kind === 'gemini' || nativeReason(p, cfg.models[p]) ? 8192 : 2000;
   return cfg.detail === 'steps' ? 1500 : 900;
 }
-function thinkCfg(model){
-  const g2 = /^gemini-2/.test(model);
-  if (cfg.think) return g2 ? { thinkingBudget:-1 } : { thinkingLevel:'high' };
-  return g2 ? { thinkingBudget:0 } : { thinkingLevel:'minimal' };
+function thinkCfg(model, lv){
+  if (/^gemini-2/.test(model)) return { thinkingBudget:{ minimal:0, low:1024, medium:4096, high:-1 }[lv] };
+  return { thinkingLevel:lv };
 }
+// If a model refuses a level, step to the nearest one it may accept.
+const NEXT_LEVEL = { minimal:'low', medium:'high', low:null, high:null };
 
 /* ---------- Streaming ---------- */
 class ApiError extends Error { constructor(status, body, retry){ super('HTTP ' + status); this.status = status; this.body = body; this.retry = retry; } }
@@ -712,20 +1066,28 @@ async function readSSE(res, onObj){
     }
   }
 }
-async function streamGemini(model, b64, signal, hooks){
+async function streamGemini(model, b64, signal, hooks, lv){
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
-  let useThink = !st.noThink.has(model);
-  for (let attempt = 0; attempt < 2; attempt++){
+  const bad = st.badLevel[model] = st.badLevel[model] || new Set();
+  let level = lv;
+  while (level && bad.has(level)) level = NEXT_LEVEL[level];
+  let useThink = !st.noThink.has(model) && !!level;
+  for (let attempt = 0; attempt < 4; attempt++){
     const body = {
-      systemInstruction:{ parts:[{ text:instructions('gemini') }] },
+      systemInstruction:{ parts:[{ text:instructions('gemini', lv) }] },
       contents:[{ role:'user', parts:[{ inlineData:{ mimeType:'image/jpeg', data:b64 } }, { text:'Answer the question in this photo.' }] }],
-      generationConfig:{ temperature:0.2, maxOutputTokens:maxTokens('gemini') }
+      generationConfig:{ temperature:0.2, maxOutputTokens:maxTokens('gemini', lv) }
     };
-    if (useThink) body.generationConfig.thinkingConfig = thinkCfg(model);
+    if (useThink) body.generationConfig.thinkingConfig = thinkCfg(model, level);
+    if (hooks.onLevel) hooks.onLevel(useThink ? level : '');
     const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', 'x-goog-api-key':cfg.keys.gemini }, body:JSON.stringify(body), signal });
     if (!res.ok){
       const text = await res.text().catch(() => '');
-      if (res.status === 400 && useThink && !/api key/i.test(text)){ st.noThink.add(model); useThink = false; continue; }
+      if (res.status === 400 && useThink && !/api key/i.test(text)){
+        bad.add(level); level = NEXT_LEVEL[level];
+        if (!level){ st.noThink.add(model); useThink = false; }
+        continue;
+      }
       throw new ApiError(res.status, text);
     }
     hooks.onOpen();
@@ -762,13 +1124,13 @@ function thinkFilter(){
     return out;
   };
 }
-async function streamOpenAI(p, model, b64, signal, hooks){
+async function streamOpenAI(p, model, b64, signal, hooks, lv){
   const P = PROV[p];
   const dataUrl = 'data:image/jpeg;base64,' + b64;
   const image = P.img === 'string' ? { type:'image_url', image_url:dataUrl } : { type:'image_url', image_url:{ url:dataUrl } };
   const body = {
-    model, stream:true, temperature:0.2, max_tokens:maxTokens(p),
-    messages:[{ role:'user', content:[{ type:'text', text:instructions(p) + '\n\nAnswer the question in this photo.' }, image] }],
+    model, stream:true, temperature:0.2, max_tokens:maxTokens(p, lv),
+    messages:[{ role:'user', content:[{ type:'text', text:instructions(p, lv) + '\n\nAnswer the question in this photo.' }, image] }],
     ...(P.extra || {})
   };
   const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.keys[p] };
@@ -778,8 +1140,8 @@ async function streamOpenAI(p, model, b64, signal, hooks){
   for (let attempt = 0; attempt < 2; attempt++){
     const b = { ...body };
     if (useReason){
-      b.reasoning_effort = cfg.think ? 'high' : 'none';
-      if (cfg.think) b.reasoning_format = 'hidden';
+      b.reasoning_effort = thinks(lv) ? 'high' : 'none';
+      if (thinks(lv)) b.reasoning_format = 'hidden';
     }
     res = await fetch(P.base + '/chat/completions', { method:'POST', headers, body:JSON.stringify(b), signal });
     if (res.ok) break;
@@ -800,12 +1162,12 @@ async function streamOpenAI(p, model, b64, signal, hooks){
     else if (Array.isArray(c)) c.forEach(part => { if (part && part.type === 'text' && part.text) emit(part.text); });
   });
 }
-function streamAny(p, model, b64, signal, hooks){
-  return PROV[p].kind === 'gemini' ? streamGemini(model, b64, signal, hooks) : streamOpenAI(p, model, b64, signal, hooks);
+function streamAny(p, model, b64, signal, hooks, lv){
+  return PROV[p].kind === 'gemini' ? streamGemini(model, b64, signal, hooks, lv) : streamOpenAI(p, model, b64, signal, hooks, lv);
 }
 
-function errInfo(p, e){
-  const name = PROV[p].name, now = performance.now();
+function errInfo(p, m, e){
+  const name = PROV[p].name, now = performance.now(), k = mkey(p, m);
   if (e instanceof ApiError){
     let msg = '';
     try {
@@ -814,20 +1176,29 @@ function errInfo(p, e){
       if (typeof msg !== 'string') msg = JSON.stringify(msg);
     } catch (_) { msg = (e.body || '').slice(0, 200); }
     if (e.status === 429){
-      let wait = Number.isFinite(e.retry) && e.retry > 0 ? e.retry : 30;
-      try { const d = (JSON.parse(e.body).error.details || []).find(x => x.retryDelay); if (d) wait = parseFloat(d.retryDelay) || wait; } catch (_) {}
-      st.backoff[p] = now + wait * 1000;
-      return { kind:'warn', retry:true, text: /per ?day|daily|quota/i.test(msg) ? `${name}’s free limit is used up for now` : `${name} limit hit, waiting ${Math.ceil(wait)} s` };
+      let wait = Number.isFinite(e.retry) && e.retry > 0 ? e.retry : 30, daily = false;
+      try {
+        const det = JSON.parse(e.body).error.details || [];
+        const d = det.find(x => x.retryDelay); if (d) wait = parseFloat(d.retryDelay) || wait;
+        daily = det.some(x => (x.violations || []).some(v => /per ?day/i.test((v.quotaId || '') + ' ' + (v.quotaMetric || ''))));
+      } catch (_) {}
+      if (!daily && /per ?day|daily|\bRPD\b/i.test(msg)) daily = true;
+      if (daily){
+        usage.out[k] = true; saveUsage(); renderStats();
+        const next = pick(now, true).c;
+        return { kind:'warn', retry:true, text: next ? `${name} ${shortModel(m)} free limit used up for today, switching to ${shortModel(next.model)}` : `${name} free limit used up for today. Add a backup model in Settings.` };
+      }
+      st.backoff[k] = now + wait * 1000;
+      return { kind:'warn', retry:true, text:`${name} limit hit, waiting ${Math.ceil(wait)} s` };
     }
     if (e.status === 401 || /api key|invalid key|unauthori[sz]ed/i.test(msg)) return { kind:'err', text:`${name} key rejected. Check it in Settings.` };
     if (e.status < 500 && /image|vision|multimodal/i.test(msg)) return { kind:'err', text:`This ${name} model can’t read images. Pick another in Settings.` };
     if (e.status === 404) return { kind:'err', text:`Model not found on ${name}. Pick another in Settings.` };
-    if (e.status >= 500){ st.backoff[p] = now + 4000; return { kind:'warn', retry:true, text:`${name} is busy, retrying shortly` }; }
+    if (e.status >= 500){ st.backoff[k] = now + 4000; return { kind:'warn', retry:true, text:`${name} is busy, retrying shortly` }; }
     return { kind:'err', text:`${name}: ${(msg || 'error ' + e.status).slice(0, 120)}` };
   }
   return { kind:'err', text:`Can’t reach ${name}. It may block calls from a browser, or the connection dropped.` };
 }
-function handleError(p, e){ const r = errInfo(p, e); if (r.retry) st.anchor = null; setStatus(r.kind, r.text); }
 
 /* ---------- Ask: one frame in, streamed answer out ---------- */
 const HEAD_RE = /QUESTION[\s*]*:[\s*]*(.*?)[\s*]*\n/i;
@@ -839,84 +1210,157 @@ function bodyOf(buf){
   return rest.replace(/^[\s*]*ANSWER[\s*]*:[ \t*]*\r?\n?/i, '');
 }
 
-async function ask(force, sig){
-  const p = cfg.prov, model = cfg.models[p];
-  if (!cfg.keys[p]){ openSettings(false); return; }
-  if (!model){ setStatus('warn', 'Pick a model in Settings'); return; }
+// Answer text from a reply, or '' while the header is still arriving or the reply says NONE or BLURRY.
+function mainBody(b){
+  const t = b.replace(/^[\s*]+/, ''), T = t.toUpperCase();
+  if (/^(NONE|BLURRY)\b/.test(T)) return '';
+  if (T.length < 9 && ['QUESTION', 'NONE', 'BLURRY'].some(w => w.startsWith(T))) return '';
+  if (!HEAD_RE.test(b) && /^QUESTION/.test(T)) return '';
+  return bodyOf(b);
+}
+// null: keep waiting. false: NONE or BLURRY. A string: the question ('' if the reply has no header).
+function headOf(b){
+  const t = b.replace(/^[\s*]+/, '');
+  if (/^(NONE|BLURRY)\b/i.test(t)) return false;
+  const m = b.match(HEAD_RE);
+  if (m) return m[1].trim();
+  return b.length >= 250 ? '' : null;
+}
+
+// The model's question line is trusted to spot a repeat only when the view changed a little
+// and the line is specific enough; similar-looking questions are never merged.
+function specific(q){ return normQ(q).length >= 50 || /\d/.test(core(q)); }
+async function ask(force, sig, info){
   const now = performance.now();
-  if (force){
-    st.timeouts = 0;
-    const b = gate(p, now, true);
-    if (b){ setStatus('warn', b); return; }
-    st.inflight.forEach(c => c.abort());
-  } else if (st.inflight.size >= MAX_INFLIGHT) return;
-  if (!sig) sig = makeSig(grab());
+  if (!info){
+    const pk = pick(now, true);
+    if (!pk.c){ if (!cfg.keys[cfg.prov]) openSettings(false); else if (pk.msg) setStatus('warn', pk.msg); return; }
+    info = { ...pk.c, frac:1 };
+  }
+  const p = info.p, model = info.model, lv = cfg.depth, backup = !(p === cfg.prov && model === cfg.models[cfg.prov]);
+  if (force){ st.timeouts = 0; st.inflight.forEach(c => c.abort()); st.inflight.clear(); }
+  else if (st.inflight.size >= MAX_INFLIGHT) return;
+  if (!sig) sig = grabSig();
   const img = capture();
   if (!img) return;
   const ctrl = new AbortController(); st.inflight.add(ctrl);
   const seq = ++st.seq;
   const say = (k, t) => { if (seq === st.seq) setStatus(k, t); };
   const front = () => seq >= st.shownSeq;
-  st.lastCall = now; noteCall(p, now);
-  count(p);
-  say('asking', 'Reading…');
+  st.lastCall = now; noteCall(p, model, now);
+  count(p, model);
   const t0 = performance.now();
   const meter = { inTok:0, outTok:0, seen:false, open:false };
-  let buf = '', phase = 'head', entry = null, handled = false;
+  let buf = '', phase = 'head', entry = null, handled = false, qs = null;
+
   const begin = q => {
-    entry = { q, raw:'', done:false, sigs: sig ? [sig] : [], prov:p, model };
+    entry = { q, raw:'', done:false, sigs: sig ? [sig] : [], prov:p, model, lv, quick:qs };
     phase = 'body';
     if (front()){ st.shownSeq = seq; show(entry, true); }
     startAlt(entry, img);
   };
+  // Whichever call names the question first decides whether it is new. Returns true if it was answered before.
+  const onHead = q => {
+    if (!force && info.frac < 0.25 && specific(q)){
+      if (st.current && same(st.current, q)){
+        handled = true; addSig(st.current, sig); ctrl.abort();
+        say('ok', 'Same question, answer kept');
+        return true;
+      }
+      const past = st.history.find(h => h !== st.current && same(h, q));
+      if (past){
+        handled = true; addSig(past, sig); ctrl.abort();
+        if (front()){ st.shownSeq = seq; show(past, true); }
+        say('ok', 'Seen before, showing saved answer');
+        return true;
+      }
+    }
+    begin(q);
+    return false;
+  };
+
+  // Quick answer first: the same photo without thinking, shown until the thinking answer starts.
+  if (cfg.quick && thinks(lv) && gate(p, model, performance.now(), true) === null){
+    const qctrl = new AbortController(); st.quickCtrls.add(qctrl);
+    qs = { raw:'', done:false, first:0, ctrl:qctrl };
+    ctrl.signal.addEventListener('abort', () => qctrl.abort());
+    noteCall(p, model, performance.now()); count(p, model); usage.quick = (usage.quick || 0) + 1; saveUsage();
+    const qm = { inTok:0, outTok:0, seen:false, open:false };
+    let qbuf = '', qlast = performance.now();
+    const qwatch = setInterval(() => { if (performance.now() - qlast > 12000) qctrl.abort(); }, 1000);
+    streamAny(p, model, img, qctrl.signal, {
+      onOpen:() => { qm.open = true; qlast = performance.now(); },
+      onUsage:u => applyUsage(qm, u),
+      onText:t => {
+        qlast = performance.now();
+        if (handled || qs.skip) return;
+        qbuf += t;
+        if (phase === 'head'){
+          const h = headOf(qbuf);
+          if (h === null) return;
+          if (h === false){ qs.skip = true; return; }   // let the thinking call decide
+          if (onHead(h)) return;
+          say('asking', 'Quick answer shown, checking…');
+        }
+        if (entry && entry.quick === qs){
+          const body = mainBody(qbuf);
+          if (!body) return;
+          if (!qs.first) qs.first = Math.round(performance.now() - t0);
+          qs.raw = body;
+          if (!entry.raw && st.current === entry) paintBody(entry, false);
+        }
+      }
+    }, 'minimal').then(() => {
+      qs.done = true;
+      bill(p, qm, null);
+      if (entry && entry.quick === qs && !entry.raw && st.current === entry) paintBody(entry, true);
+    }).catch(e => {
+      bill(p, qm, null);
+      if (e.name !== 'AbortError'){ usage.errors++; saveUsage(); errInfo(p, model, e); }
+    }).finally(() => { clearInterval(qwatch); st.quickCtrls.delete(qctrl); });
+  }
+  const reading = qs ? 'reading, quick answer first…' : 'reading…';
+  say('asking', backup ? `Backup ${shortModel(model)}: ${reading}` : reading[0].toUpperCase() + reading.slice(1));
+
   const onText = txt => {
     if (handled) return;
     buf += txt;
     if (phase === 'head'){
-      const t = buf.replace(/^[\s*]+/, '');
-      if (/^(NONE|BLURRY)\b/i.test(t)) return;
-      const m = buf.match(HEAD_RE);
-      if (!m){
-        if (buf.length < 250) return;
-        begin('');
-      } else {
-        const q = m[1].trim();
-        if (!force){
-          if (st.current && same(st.current, q)){
-            handled = true; addSig(st.current, sig); ctrl.abort();
-            say('ok', 'Same question, answer kept');
-            return;
-          }
-          const past = st.history.find(h => h !== st.current && same(h, q));
-          if (past){
-            handled = true; addSig(past, sig); ctrl.abort();
-            if (front()){ st.shownSeq = seq; show(past, true); }
-            say('ok', 'Seen before, showing saved answer');
-            return;
-          }
-        }
-        begin(q);
-        say('asking', 'Answering…');
-      }
+      const h = headOf(buf);
+      if (h === null || h === false) return;
+      if (onHead(h)) return;
+      say('asking', 'Answering…');
     }
     if (phase === 'body'){
+      const body = mainBody(buf);
+      if (!body) return;
       if (!entry.first) entry.first = Math.round(performance.now() - t0);
-      entry.raw = bodyOf(buf);
+      if (!entry.raw && qs && qs.raw) say('asking', 'Answering…');
+      entry.raw = body;
       if (st.current === entry) paintBody(entry, false);
     }
   };
-  const hooks = { onText:t => { lastData = performance.now(); gotText = true; onText(t); }, onOpen:() => { meter.open = true; lastData = performance.now(); }, onUsage:u => applyUsage(meter, u) };
+  let usedLv = lv;
+  const hooks = { onText:t => { lastData = performance.now(); gotText = true; onText(t); }, onOpen:() => { meter.open = true; lastData = performance.now(); }, onUsage:u => applyUsage(meter, u), onLevel:l => { usedLv = l; } };
   // Watchdog: a call that goes quiet is stopped and the view is asked again once.
-  const lim = cfg.think ? { first:30000, stall:15000, total:45000 } : { first:15000, stall:10000, total:30000 };
+  const lim = thinks(lv) ? { first:30000, stall:15000, total:45000 } : { first:15000, stall:10000, total:30000 };
   let lastData = t0, gotText = false;
   const watch = setInterval(() => {
-    const t = performance.now();
-    if (phase === 'head' && !handled) say('asking', `${cfg.think ? 'Thinking' : 'Reading'}… ${Math.round((t - t0) / 1000)} s`);
+    const t = performance.now(), s = Math.round((t - t0) / 1000);
+    if (!handled){
+      if (phase === 'head') say('asking', `${thinks(lv) ? 'Thinking' : 'Reading'}… ${s} s`);
+      else if (entry && !entry.raw && qs && qs.raw) say('asking', `Quick answer shown, checking… ${s} s`);
+    }
     if ((!gotText && t - t0 > lim.first) || (gotText && t - lastData > lim.stall) || t - t0 > lim.total){ ctrl.timedOut = true; ctrl.abort(); }
   }, 1000);
+  // If the thinking answer fails, keep the quick one rather than nothing.
+  const fallBack = () => {
+    if (entry && !entry.raw && qs && qs.raw){ entry.raw = qs.raw; entry.quickOnly = true; return true; }
+    return false;
+  };
 
   try {
-    await streamAny(p, model, img, ctrl.signal, hooks);
+    await streamAny(p, model, img, ctrl.signal, hooks, lv);
     if (phase === 'head'){
       const t = buf.replace(/^[\s*]+/, '');
       if (/^NONE/i.test(t)){ bill(p, meter, 'none'); say('idle', 'No question in view'); return; }
@@ -924,36 +1368,52 @@ async function ask(force, sig){
       if (!buf.trim()){ bill(p, meter, 'errors'); say('warn', 'Empty reply. Tap Ask now to retry.'); return; }
       begin('');
       entry.raw = bodyOf(buf);
-    }
+    } else if (!entry.raw) fallBack();
     entry.done = true;
+    entry.lv = usedLv;
     entry.ms = Math.round(performance.now() - t0);
     entry.inTok = meter.inTok; entry.outTok = meter.outTok;
-    if (entry.q) remember(entry);
+    if (qs && qs.done && qs.raw && !entry.quickOnly){
+      entry.quickSame = answerKey(qs.raw) === answerKey(entry.raw);
+      usage[entry.quickSame ? 'qSame' : 'qDiff']++;
+    }
+    if (qs && qs.first){ usage.qFirstSum += qs.first; usage.qN++; }
+    if (entry.first && !entry.quickOnly){ usage.firstSum += entry.first; usage.doneSum += entry.ms; usage.tN++; }
+    if (entry.q && !entry.quickOnly) remember(entry);
     bill(p, meter, 'answered');
     if (st.current === entry) paintBody(entry, true);
     renderEarlier();
     st.timeouts = 0;
-    say('ok', `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
+    say('ok', entry.quickOnly ? 'Only the quick answer arrived' : `Answered in ${(entry.ms / 1000).toFixed(1)} s`);
   } catch (e) {
     if (e.name === 'AbortError' && ctrl.timedOut){
       bill(p, meter, 'errors');
-      if (entry){ entry.raw += '\n\n(cut off: took too long)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
+      const kept = fallBack();
+      if (entry){
+        if (!kept) entry.raw += '\n\n(cut off: took too long)';
+        entry.done = true; if (st.current === entry) paintBody(entry, true);
+      }
       st.timeouts = (st.timeouts || 0) + 1;
       if (seq === st.seq){
-        if (st.timeouts < 2){ st.anchor = null; say('warn', `${PROV[p].name} took too long, asking again`); }
+        if (kept) say('warn', 'Thinking took too long, quick answer kept. Tap Ask now to try again.');
+        else if (st.timeouts < 2){ st.anchor = null; say('warn', `${PROV[p].name} took too long, asking again`); }
         else say('warn', `${PROV[p].name} isn’t answering. Check your connection, then tap Ask now.`);
       }
       return;
     }
     if (e.name === 'AbortError'){ bill(p, meter, handled ? 'dup' : 'aborted'); return; }
     if (meter.open) bill(p, meter, 'errors'); else { usage.errors++; saveUsage(); renderStats(); }
-    const r = errInfo(p, e);
+    const r = errInfo(p, model, e);
     if (r.retry) st.anchor = null;
     say(r.kind, r.text);
-    if (entry){ entry.raw += '\n\n(cut off)'; entry.done = true; if (st.current === entry) paintBody(entry, true); }
+    if (entry){
+      if (!fallBack()) entry.raw += '\n\n(cut off)';
+      entry.done = true; if (st.current === entry) paintBody(entry, true);
+    }
   } finally {
     clearInterval(watch);
     st.inflight.delete(ctrl);
+    if (qs && !qs.done) qs.ctrl.abort();
   }
 }
 
@@ -968,10 +1428,10 @@ function startAlt(entry, img){
   const p = cfg.alt;
   if (!p || p === entry.prov || !cfg.keys[p] || !cfg.models[p]) return;
   const now = performance.now();
-  const blocked = gate(p, now, true);
+  const blocked = gate(p, cfg.models[p], now, true);
   if (blocked){ entry.alt = { prov:p, model:cfg.models[p], raw:'', done:true, note:'Skipped. ' + blocked }; return; }
   const ctrl = new AbortController(); st.altCtrls.add(ctrl);
-  noteCall(p, now); count(p); usage.alt++; saveUsage();
+  noteCall(p, cfg.models[p], now); count(p, cfg.models[p]); usage.alt++; saveUsage();
   const a = entry.alt = { prov:p, model:cfg.models[p], raw:'', done:false };
   const meter = { inTok:0, outTok:0, seen:false, open:false };
   const t0 = performance.now();
@@ -981,12 +1441,12 @@ function startAlt(entry, img){
     onOpen:() => { meter.open = true; },
     onUsage:u => applyUsage(meter, u),
     onText:t => { buf += t; if (!a.first) a.first = Math.round(performance.now() - t0); a.raw = altBody(buf); repaint(); }
-  }).then(() => {
+  }, cfg.depth).then(() => {
     a.done = true; a.ms = Math.round(performance.now() - t0); a.inTok = meter.inTok; a.outTok = meter.outTok;
     bill(p, meter, null); repaint();
   }).catch(e => {
     if (e.name === 'AbortError'){ bill(p, meter, null); return; }
-    a.done = true; a.note = errInfo(p, e).text;
+    a.done = true; a.note = errInfo(p, a.model, e).text;
     if (meter.open) bill(p, meter, null);
     usage.errors++; saveUsage();
     repaint();
@@ -1017,13 +1477,27 @@ function answerKey(raw){
   if (m) return 'L:' + m[1];
   return f.toLowerCase().replace(/\\[a-z]+|\$|[^a-z0-9.=+\-*\/^]/g, '');
 }
-function format(raw){
+// The main answer is the hero: a letter tile for multiple choice, otherwise a highlighter stroke.
+function finalHTML(line){
+  const t = line.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, '').trim();
+  const mc = t.match(/^\(?([A-F])\)?(?:[.):]\s*(.*))?$/);
+  if (mc) return `<p class="final mc"><span class="opt">${mc[1]}</span>${mc[2] ? `<span>${inline(mc[2])}</span>` : ''}</p>`;
+  if (/^\(?[a-h]\)\s/i.test(t)) return `<p class="final part">${inline(t)}</p>`;
+  return `<p class="final"><mark>${inline(t)}</mark></p>`;
+}
+function format(raw, provisional, meta){
   const { finals, work, pending } = finalsWork(raw);
   if (!finals.length && !work) return '<p class="empty">Answering…</p>';
-  let h = '';
-  if (finals.length) h += finals.map(l => `<p class="final">${inline(l.replace(/^\s*[-*]\s+/, ''))}</p>`).join('');
+  let h = `<div class="ans${provisional ? ' prov' : ''}">`;
+  if (finals.length) h += finals.map(finalHTML).join('');
   else if (pending) h += '<p class="empty">Working it out…</p>';
-  if (work) h += `<p class="work">${inline(work.split('\n').map(l => l.replace(/^\s*[-*]\s+/, '• ')).join('\n')).replace(/\n/g, '<br>')}</p>`;
+  h += '</div>';
+  if (work || meta){
+    h += `<details class="workbox"${cfg.showWork ? ' open' : ''}><summary>Working</summary>`;
+    if (work) h += `<p class="work">${inline(work.split('\n').map(l => l.replace(/^\s*[-*]\s+/, '• ')).join('\n')).replace(/\n/g, '<br>')}</p>`;
+    if (meta) h += `<p class="meta">${meta}</p>`;
+    h += '</details>';
+  }
   return h;
 }
 function renderMath(el){
@@ -1046,16 +1520,34 @@ function openEntry(q, sig){
   return e;
 }
 function show(e, fresh){
+  const changed = st.current !== e;
   st.current = e;
   const ql = $('qLine');
   ql.textContent = e.q || '';
   if (fresh && e.q){ ql.classList.remove('fresh'); void ql.offsetWidth; ql.classList.add('fresh'); }
   paintBody(e, e.done);
+  if (changed){ const a = $('aBody'); a.classList.remove('enter'); void a.offsetWidth; a.classList.add('enter'); $('sheet').scrollTop = 0; }
   renderEarlier();
 }
+function firstLine(raw){ return (finalsWork(raw).finals[0] || '').replace(/^\s*[-*]\s+/, ''); }
+function shortAnswer(raw){ return firstLine(raw).replace(/\*\*/g, '').replace(/\$/g, '').trim(); }
 function paintBody(e, final){
-  let h = format(e.raw);
-  if (e.ms) h += `<p class="meta">${esc(PROV[e.prov].name)}, ${esc(shortModel(e.model))}: ${(e.ms / 1000).toFixed(1)} s, first words at ${((e.first || e.ms) / 1000).toFixed(1)} s, ${e.inTok || '?'} input and ${e.outTok || '?'} output tokens.</p>`;
+  const Q = e.quick, s = ms => (ms / 1000).toFixed(1) + ' s';
+  const quickView = Q && !e.raw && !e.done;
+  // Status chips sit above the answer, so the answer itself never moves when they change.
+  let chips = '';
+  if (quickView && Q.raw) chips = '<span class="chip wait"><span class="dot"></span>Quick answer, checking</span>';
+  else if (e.quickOnly) chips = '<span class="chip diff">Not checked</span><span>The thinking answer didn’t arrive.</span>';
+  else if (e.done && Q && Q.done && Q.raw) chips = e.quickSame ? '<span class="chip ok">Checked</span>' : `<span class="chip diff">Changed after thinking</span><span>Quick answer was ${inline(shortAnswer(Q.raw))}</span>`;
+  if (e.ms) chips += `<span class="chip">${s(e.ms)}</span>`;
+  let meta = '';
+  if (e.ms){
+    const level = e.lv != null ? `, ${levelLabel(e.prov, e.lv)}` : '';
+    const quickAt = Q && Q.first ? `quick answer at ${s(Q.first)}, ` : '';
+    const thinkAt = e.quickOnly ? '' : `${Q && Q.first ? 'thinking answer' : 'first words'} at ${s(e.first || e.ms)}, `;
+    meta = `${esc(PROV[e.prov].name)}, ${esc(shortModel(e.model))}${esc(level)}: ${quickAt}${thinkAt}finished at ${s(e.ms)}, ${e.inTok || '?'} input and ${e.outTok || '?'} output tokens.`;
+  }
+  let h = (chips ? `<p class="chips">${chips}</p>` : '') + format(quickView ? Q.raw : e.raw, quickView, meta);
   if (e.alt){
     const A = e.alt;
     let badge = '';
@@ -1064,27 +1556,42 @@ function paintBody(e, final){
       badge = `<span class="badge ${agree ? 'same' : 'diff'}">${agree ? 'Same answer' : 'Different answer'}</span>`;
     }
     h += `<section class="alt" aria-label="Second opinion"><p class="alt-head"><span>Second opinion: ${esc(PROV[A.prov].name)}, ${esc(shortModel(A.model))}</span>${badge}</p>`
-      + (A.note ? `<p class="empty">${esc(A.note)}</p>` : format(A.raw))
-      + (A.ms ? `<p class="meta">${(A.ms / 1000).toFixed(1)} s, ${A.inTok || '?'} input and ${A.outTok || '?'} output tokens.</p>` : '')
+      + (A.note ? `<p class="empty">${esc(A.note)}</p>` : format(A.raw, false, A.ms ? `${(A.ms / 1000).toFixed(1)} s, ${A.inTok || '?'} input and ${A.outTok || '?'} output tokens.` : ''))
       + '</section>';
   }
   const a = $('aBody');
   a.innerHTML = h;
   if (final) renderMath(a);
 }
+// Earlier answers: question on the left, its answer on the right, so you can scan them without opening each one.
 function renderEarlier(){
-  const list = st.history.filter(h => h !== st.current).slice(0, 8);
+  const list = st.history.filter(h => h !== st.current).slice(0, 12);
   $('earlierWrap').hidden = list.length === 0;
   const box = $('earlier');
   box.innerHTML = '';
   list.forEach(h => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = h.q || 'Untitled question';
-    b.addEventListener('click', () => { show(h, false); $('sheet').scrollTop = 0; });
+    b.innerHTML = `<span class="eq">${esc(h.q || 'Untitled question')}</span><span class="ea">${esc(shortAnswer(h.raw))}</span>`;
+    b.addEventListener('click', () => show(h, false));
     box.append(b);
   });
 }
+// Camera size and answer text size
+function applyLayout(){
+  const small = cfg.camSize === 'small' && !!st.stream;
+  document.querySelector('.app').dataset.cam = small ? 'small' : 'big';
+  $('camToggle').hidden = !st.stream;
+  $('camToggle').textContent = small ? 'Big camera' : 'Small camera';
+  $('sheet').style.setProperty('--fs', String(cfg.fs || 1));
+  requestAnimationFrame(layoutCrop);
+}
+$('camToggle').addEventListener('click', () => { cfg.camSize = cfg.camSize === 'small' ? 'big' : 'small'; save(); applyLayout(); });
+$('vf').addEventListener('click', () => { if (document.querySelector('.app').dataset.cam === 'small'){ cfg.camSize = 'big'; save(); applyLayout(); } });
+[['fsDown', -0.15], ['fsUp', 0.15]].forEach(([id, d]) => $(id).addEventListener('click', () => {
+  cfg.fs = Math.min(1.8, Math.max(0.7, Math.round(((cfg.fs || 1) + d) * 100) / 100)); save(); applyLayout();
+}));
+$('aBody').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('workbox')){ cfg.showWork = e.target.open; save(); } }, true);
 
 /* ---------- Settings ---------- */
 function keyInput(p){ return $('key-' + p); }
@@ -1139,7 +1646,7 @@ async function listModels(p, key){
   return ids.map(id => ({ id, label:id }));
 }
 const modelCache = {};
-async function fillModels(p, sel, note){
+async function fillModels(p, sel, note, want, avoid){
   sel.innerHTML = '';
   if (!p){ sel.hidden = true; note.textContent = ''; return; }
   sel.hidden = false;
@@ -1163,10 +1670,10 @@ async function fillModels(p, sel, note){
     }
   }
   if (!list.length) list = PROV[p].fallback.map(id => ({ id, label:id }));
-  let chosen = cfg.models[p];
-  if (!chosen || !list.some(m => m.id === chosen)){
+  let chosen = want !== undefined ? want : cfg.models[p];
+  if (!chosen || !list.some(m => m.id === chosen) || (avoid && chosen === avoid)){
     if (chosen && !list.length) list.unshift({ id:chosen, label:chosen });
-    else if (!chosen || list.length) chosen = (list.find(m => m.free) || list[0] || { id:chosen }).id;
+    else chosen = (list.find(m => m.free && m.id !== avoid) || list.find(m => m.id !== avoid) || list[0] || { id:chosen }).id;
   }
   list.forEach(m => {
     const o = document.createElement('option');
@@ -1180,10 +1687,22 @@ function fillProviderSelects(){
   IDS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = PROV[p].name; if (p === cfg.prov) o.selected = true; ps.append(o); });
   const none = document.createElement('option'); none.value = ''; none.textContent = 'None'; as.append(none);
   IDS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = PROV[p].name; if (p === cfg.alt) o.selected = true; as.append(o); });
+  [0, 1].forEach(i => {
+    const s = $('bk' + i + 'Prov'), b = cfg.backups[i];
+    s.innerHTML = '';
+    const n = document.createElement('option'); n.value = ''; n.textContent = 'None'; s.append(n);
+    IDS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = PROV[p].name; if (b && b.p === p) o.selected = true; s.append(o); });
+  });
+}
+function fillBackup(i, keep){
+  const p = $('bk' + i + 'Prov').value, b = cfg.backups[i];
+  const want = keep && b && b.p === p ? b.model : undefined;
+  const avoid = p === $('provSelect').value ? ($('modelSelect').value || cfg.models[p]) : undefined;
+  return fillModels(p, $('bk' + i + 'Model'), $('bk' + i + 'Note'), want, avoid);
 }
 function renderLimits(){
   const box = $('limitsBox');
-  const show = IDS.filter(p => liveKey(p) || p === $('provSelect').value || p === $('altSelect').value);
+  const show = IDS.filter(p => liveKey(p) || p === $('provSelect').value || p === $('altSelect').value || p === $('bk0Prov').value || p === $('bk1Prov').value);
   box.innerHTML = '';
   show.forEach(p => {
     const L = cfg.limits[p];
@@ -1208,9 +1727,9 @@ function openSettings(toUsage){
   $('showKeys').textContent = 'Show keys';
   fillProviderSelects();
   document.querySelectorAll('input[name=detail]').forEach(r => { r.checked = r.value === cfg.detail; });
-  $('thinkInput').checked = !!cfg.think;
+  document.querySelectorAll('input[name=depth]').forEach(r => { r.checked = r.value === cfg.depth; });
+  $('quickInput').checked = !!cfg.quick;
   $('imgSelect').value = String(cfg.img);
-  $('cropInput').checked = !!cfg.crop;
   $('sensSelect').value = cfg.sens;
   renderLimits();
   renderUsage();
@@ -1219,7 +1738,9 @@ function openSettings(toUsage){
   if (toUsage) $('usageBox').scrollIntoView({ block:'start' });
   fillModels(cfg.prov, $('modelSelect'), $('modelNote'));
   fillModels(cfg.alt, $('altModelSelect'), $('altNote'));
+  fillBackup(0, true); fillBackup(1, true);
 }
+[0, 1].forEach(i => $('bk' + i + 'Prov').addEventListener('change', () => { renderLimits(); fillBackup(i, false); }));
 $('showKeys').addEventListener('click', () => {
   const hidden = keyInput('gemini').type === 'password';
   IDS.forEach(p => { keyInput(p).type = hidden ? 'text' : 'password'; });
@@ -1229,12 +1750,12 @@ IDS.forEach(p => keyInput(p).addEventListener('change', () => {
   renderLimits();
   if ($('provSelect').value === p) fillModels(p, $('modelSelect'), $('modelNote'));
   if ($('altSelect').value === p) fillModels(p, $('altModelSelect'), $('altNote'));
+  [0, 1].forEach(i => { if ($('bk' + i + 'Prov').value === p) fillBackup(i, true); });
 }));
 $('provSelect').addEventListener('change', () => { renderLimits(); fillModels($('provSelect').value, $('modelSelect'), $('modelNote')); });
 $('altSelect').addEventListener('change', () => { renderLimits(); fillModels($('altSelect').value, $('altModelSelect'), $('altNote')); });
 $('resetUsage').addEventListener('click', () => { usage = blankUsage(); saveUsage(); renderStats(); renderUsage(); });
 $('saveSettings').addEventListener('click', () => {
-  const cropBefore = cfg.crop;
   IDS.forEach(p => { cfg.keys[p] = liveKey(p); });
   cfg.prov = $('provSelect').value || 'gemini';
   if ($('modelSelect').value) cfg.models[cfg.prov] = $('modelSelect').value;
@@ -1242,9 +1763,12 @@ $('saveSettings').addEventListener('click', () => {
   if (cfg.alt === cfg.prov) cfg.alt = '';
   if (cfg.alt && $('altModelSelect').value) cfg.models[cfg.alt] = $('altModelSelect').value;
   const d = document.querySelector('input[name=detail]:checked'); if (d) cfg.detail = d.value;
-  cfg.think = $('thinkInput').checked;
+  const dp = document.querySelector('input[name=depth]:checked'); if (dp) cfg.depth = dp.value;
+  cfg.think = thinks(cfg.depth);
+  cfg.quick = $('quickInput').checked;
   cfg.img = Number($('imgSelect').value) || 1024;
-  cfg.crop = $('cropInput').checked;
+  cfg.backups = [0, 1].map(i => ({ p:$('bk' + i + 'Prov').value, model:$('bk' + i + 'Model').value }))
+    .filter(b => b.p && b.model && !(b.p === cfg.prov && b.model === cfg.models[cfg.prov]));
   cfg.sens = $('sensSelect').value;
   document.querySelectorAll('#limitsBox input[data-p]').forEach(inp => {
     const p = inp.dataset.p, k = inp.dataset.k, v = Number(inp.value);
@@ -1256,7 +1780,6 @@ $('saveSettings').addEventListener('click', () => {
   save();
   dlg.close();
   renderStats();
-  if (cfg.crop !== cropBefore){ st.anchor = null; st.prev = null; }
   layoutCrop();
   if (camChanged) startCamera(cam);
   else if (st.stream) setStatus('idle', cfg.keys[cfg.prov] ? 'Watching' : `Add your ${PROV[cfg.prov].name} key in Settings`);
@@ -1273,11 +1796,13 @@ $('pauseBtn').addEventListener('click', () => {
   if (st.paused){
     st.inflight.forEach(c => c.abort());
     st.altCtrls.forEach(c => c.abort());
+    st.quickCtrls.forEach(c => c.abort());
     setStatus('idle', 'Paused, no calls');
   } else { st.stableSince = performance.now(); setStatus('idle', 'Watching'); }
 });
 
 renderStats();
+applyLayout();
 })();
 </script>
 </body>
