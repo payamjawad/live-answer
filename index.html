@@ -82,7 +82,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .status[data-kind=err] .dot{background:var(--err);box-shadow:0 0 10px var(--err)}
 @keyframes pulse{50%{opacity:.3}}
 .tool{flex:none;min-width:44px;min-height:40px;padding:0 11px;border:1px solid var(--line2);border-radius:12px;background:var(--glass);color:var(--ink);font:inherit;font-size:.86rem;font-weight:700}
-@media (orientation:portrait){.app[data-cam=small] .sheethead{flex-wrap:wrap;row-gap:6px}.app[data-cam=small] .status{order:5;flex-basis:100%}}
+.app:not([data-land])[data-cam=small] .sheethead{flex-wrap:wrap;row-gap:6px}.app:not([data-land])[data-cam=small] .status{order:5;flex-basis:100%}
 .app[data-cam=small] .vf{position:absolute;z-index:7;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;width:96px;height:60px;flex:none;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px rgba(127,231,255,.4),0 0 22px rgba(61,139,255,.4)}
 .app[data-cam=small] .vf > :not(video){display:none !important}
 .app[data-cam=small] .vf::after{display:none}
@@ -203,22 +203,42 @@ select option{background:#0A1838;color:var(--ink)}
 .lim legend{padding:0 4px;font-weight:700;font-size:.92rem}
 .version{margin-top:14px;color:var(--faint);font-size:.8rem}
 
-@media (orientation:landscape) and (max-height:540px){
-  .app{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) auto auto}
-  .app[data-cam=small]{grid-template-columns:minmax(0,1fr)}
-  .app[data-cam=small] .sheet,.app[data-cam=small] .stats,.app[data-cam=small] .bar{grid-column:1}
-  .app[data-cam=small] .vf{grid-row:auto;height:60px;left:calc(env(safe-area-inset-left,0px) + 12px)}
-  .app[data-cam=small] .sheet{padding-left:calc(env(safe-area-inset-left,0px) + 16px)}
-  .vf{grid-column:1;grid-row:1 / span 3;height:100%}
-  .vf::after{display:none}
-  .sheet{grid-column:2;grid-row:1;padding:12px calc(env(safe-area-inset-right,0px) + 16px) 6px 16px}
-  .stats{grid-column:2;grid-row:2;padding-right:calc(env(safe-area-inset-right,0px) + 16px)}
-  .bar{grid-column:2;grid-row:3;padding:6px calc(env(safe-area-inset-right,0px) + 10px) calc(env(safe-area-inset-bottom,0px) + 6px) 10px}
-  .btn{min-height:44px}
-  .final{font-size:calc(1.7rem * var(--fs))}
-  .sheethead{top:-12px;margin:-12px calc(-16px - env(safe-area-inset-right,0px)) 12px -16px;padding-left:16px;padding-right:calc(env(safe-area-inset-right,0px) + 12px)}
-  dialog{max-height:92dvh}
-}
+/* Sideways. The app sets data-land for landscape screens and for a turned layout, data-rot when it turns the layout itself. */
+.app{--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
+.app[data-land]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) auto auto}
+.app[data-land] .vf{grid-column:1;grid-row:1 / span 3;height:100%}
+.app[data-land] .vf::after{display:none}
+.app[data-land] .sheet{grid-column:2;grid-row:1;padding:12px calc(var(--sr) + 16px) 6px 16px}
+.app[data-land] .stats{grid-column:2;grid-row:2;padding-right:calc(var(--sr) + 16px)}
+.app[data-land] .bar{grid-column:2;grid-row:3;padding:6px calc(var(--sr) + 10px) calc(var(--sb) + 6px) 10px}
+.app[data-land] .btn{min-height:44px}
+.app[data-land] .final{font-size:calc(1.7rem * var(--fs))}
+.app[data-land] .sheethead{top:-12px;margin:-12px calc(-16px - var(--sr)) 12px -16px;padding-left:16px;padding-right:calc(var(--sr) + 12px)}
+/* Small camera, sideways: the answer fills the left; a rail on the right holds the camera, status, earlier answers and buttons */
+.app[data-land][data-cam=small]{grid-template-columns:minmax(0,1fr) minmax(300px,36%);grid-template-rows:auto minmax(0,1fr) auto auto}
+.app[data-land][data-cam=small] .tool{min-width:38px;min-height:38px;padding:0 9px;font-size:.8rem}
+.app[data-land][data-cam=small] #statTokens,.app[data-land][data-cam=small] #statSaved{display:none}
+.app[data-land][data-cam=small] .earlier h2{font-size:.9rem;margin-bottom:8px}
+.app[data-land][data-cam=small] .earlier button{padding:9px 12px;font-size:.86rem}
+.app[data-land][data-cam=small] .sheet{display:contents}
+.app[data-land][data-cam=small] #card{grid-column:1;grid-row:1 / -1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(var(--st) + 16px) 22px calc(var(--sb) + 16px) calc(var(--sl) + 22px);border-right:1px solid var(--line)}
+.app[data-land][data-cam=small] .sheethead{grid-column:2;grid-row:1;position:relative;top:auto;margin:0;padding:calc(var(--st) + 8px) calc(var(--sr) + 10px) 8px 118px;min-height:calc(var(--st) + 78px);flex-wrap:wrap;row-gap:6px}
+.app[data-land][data-cam=small] .sheethead::after{left:12px;right:12px}
+.app[data-land][data-cam=small] .status{order:5;flex-basis:100%}
+.app[data-land][data-cam=small] .vf{grid-column:2;grid-row:1;position:absolute;left:12px;top:calc(var(--st) + 8px);height:60px}
+.app[data-land][data-cam=small] .earlier{grid-column:2;grid-row:2;min-height:0;margin:0;padding:12px calc(var(--sr) + 12px) 12px 12px;border-top:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.app[data-land][data-cam=small] .stats{grid-column:2;grid-row:3;padding:6px calc(var(--sr) + 12px) 6px 12px}
+.app[data-land][data-cam=small] .bar{grid-column:2;grid-row:4;padding:6px calc(var(--sr) + 10px) calc(var(--sb) + 8px) 10px}
+.app[data-land][data-cam=small] .bar .btn{min-height:44px;padding:0 6px;font-size:.92rem}
+.app[data-land][data-cam=small] .final{font-size:calc(2.2rem * var(--fs))}
+/* Turned layout, for a phone lying sideways with Portrait Orientation Lock on */
+.app[data-rot]{position:fixed;top:0;left:0;width:var(--appw,100vh);height:var(--apph,100vw);transform-origin:0 0}
+.app[data-rot=r]{transform:translateX(var(--vpw,100vw)) rotate(90deg);--sl:max(env(safe-area-inset-top,0px),12px);--sr:max(env(safe-area-inset-bottom,0px),10px);--st:6px;--sb:6px}
+.app[data-rot=l]{transform:translateY(var(--vph,100vh)) rotate(-90deg);--sl:max(env(safe-area-inset-bottom,0px),12px);--sr:max(env(safe-area-inset-top,0px),10px);--st:6px;--sb:6px}
+.app[data-rot] .vf video{inset:auto;left:50%;top:50%;width:60px;height:96px}
+.app[data-rot=r] .vf video{transform:translate(-50%,-50%) rotate(-90deg) !important}
+.app[data-rot=l] .vf video{transform:translate(-50%,-50%) rotate(90deg) !important}
+.app[data-land] ~ dialog{max-height:92dvh}
 @media (prefers-reduced-motion:reduce){.q.fresh,#aBody.enter,#aBody.enter .ans::after{animation:none}#aBody.enter .ans::after{display:none}.status[data-kind=asking] .dot,.chip.wait .dot{animation:none}}
 </style>
 </head>
@@ -351,6 +371,16 @@ select option{background:#0A1838;color:var(--ink)}
     </select>
   </label>
 
+  <fieldset class="field">
+    <legend>Screen direction</legend>
+    <div class="seg">
+      <label><input type="radio" name="rot" value=""><span>Follow phone</span></label>
+      <label><input type="radio" name="rot" value="r"><span>Turned left</span></label>
+      <label><input type="radio" name="rot" value="l"><span>Turned right</span></label>
+    </div>
+    <small>For a phone lying sideways when the screen doesn’t rotate, for example with Portrait Orientation Lock on. Pick the one that makes the text upright; the photo sent to the model is turned to match. With the lock off, Follow phone turns the layout by itself.</small>
+  </fieldset>
+
   <p class="field note">Zoom and the reading area are set on the camera view. Tap the zoom button to zoom in, and Area to drag a box over the part to read, such as just your screen.</p>
 
   <label class="field">
@@ -370,7 +400,7 @@ select option{background:#0A1838;color:var(--ink)}
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 4.1</p>
+  <p class="version">Version 4.2</p>
 </dialog>
 
 <script>
@@ -399,7 +429,7 @@ const STORE = 'liveanswer.v3', OLD = 'liveanswer.v1', USTORE = 'liveanswer.usage
 function defaults(){
   const keys = {}, models = {}, limits = {};
   IDS.forEach(p => { keys[p] = ''; models[p] = PROV[p].model; limits[p] = { cap:PROV[p].cap, rpm:PROV[p].rpm, pin:PROV[p].pin, pout:PROV[p].pout }; });
-  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, depth:'', quick:false, backups:[], zoom:1, area:null, camSize:'big', fs:1, showWork:false, check:true, goal:2, img:1024, crop:false, sens:'normal', deviceId:'' };
+  return { keys, models, limits, prov:'gemini', alt:'', detail:'auto', think:false, depth:'', quick:false, backups:[], zoom:1, area:null, camSize:'big', fs:1, showWork:false, check:true, goal:2, rot:'', img:1024, crop:false, sens:'normal', deviceId:'' };
 }
 let cfg = defaults();
 (function load(){
@@ -777,7 +807,8 @@ function layoutCrop(){
 }
 video.addEventListener('loadedmetadata', layoutCrop);
 video.addEventListener('resize', layoutCrop);
-window.addEventListener('resize', layoutCrop);
+window.addEventListener('resize', () => { layoutCrop(); if (typeof applyLayout === 'function') applyLayout(); });
+window.addEventListener('orientationchange', () => setTimeout(() => applyLayout(), 250));
 
 function resetView(){ st.prev = null; st.still = null; st.anchor = null; st.fpend = null; st.checked = false; st.stableSince = performance.now() + 300; }
 function showZoom(){
@@ -1066,8 +1097,18 @@ function capture(){
   if (!video.videoWidth) return null;
   const [x, y, w, h] = srcRect();
   const scale = Math.min(1, Number(cfg.img) / Math.max(w, h));
-  cap.width = Math.round(w * scale); cap.height = Math.round(h * scale);
-  cap.getContext('2d').drawImage(video, x, y, w, h, 0, 0, cap.width, cap.height);
+  const cw = Math.round(w * scale), ch = Math.round(h * scale), c = cap.getContext('2d');
+  if (cfg.rot === 'r' || cfg.rot === 'l'){
+    // The layout was turned to face you, so the camera picture is turned the other way: undo it
+    cap.width = ch; cap.height = cw;
+    c.save();
+    if (cfg.rot === 'r'){ c.translate(0, cw); c.rotate(-Math.PI / 2); } else { c.translate(ch, 0); c.rotate(Math.PI / 2); }
+    c.drawImage(video, x, y, w, h, 0, 0, cw, ch);
+    c.restore();
+  } else {
+    cap.width = cw; cap.height = ch;
+    c.drawImage(video, x, y, w, h, 0, 0, cw, ch);
+  }
   return cap.toDataURL('image/jpeg', 0.82).split(',')[1];
 }
 
@@ -1793,9 +1834,15 @@ function renderEarlier(){
 }
 // Camera size and answer text size
 function applyLayout(){
-  const small = cfg.camSize === 'small' && !!st.stream;
-  document.querySelector('.app').dataset.cam = small ? 'small' : 'big';
-  $('camToggle').hidden = !st.stream;
+  const app = document.querySelector('.app'), W = innerWidth, H = innerHeight;
+  const rot = cfg.rot === 'r' || cfg.rot === 'l' ? cfg.rot : '';
+  const small = (cfg.camSize === 'small' || !!rot) && !!st.stream;   // a turned layout always uses the small camera
+  app.dataset.cam = small ? 'small' : 'big';
+  if (rot) app.dataset.rot = rot; else delete app.dataset.rot;
+  if (rot || (W > H && H <= 600)) app.dataset.land = '1'; else delete app.dataset.land;
+  const r = document.documentElement.style;
+  r.setProperty('--vpw', W + 'px'); r.setProperty('--vph', H + 'px'); r.setProperty('--appw', H + 'px'); r.setProperty('--apph', W + 'px');
+  $('camToggle').hidden = !st.stream || !!rot;
   $('camToggle').textContent = small ? 'Big camera' : 'Small camera';
   $('sheet').style.setProperty('--fs', String(cfg.fs || 1));
   requestAnimationFrame(layoutCrop);
@@ -1943,6 +1990,7 @@ function openSettings(toUsage){
   document.querySelectorAll('input[name=detail]').forEach(r => { r.checked = r.value === cfg.detail; });
   document.querySelectorAll('input[name=depth]').forEach(r => { r.checked = r.value === cfg.depth; });
   $('checkInput').checked = cfg.check !== false;
+  document.querySelectorAll('input[name=rot]').forEach(r => { r.checked = r.value === (cfg.rot || ''); });
   $('goalInput').value = String(cfg.goal == null ? 2 : cfg.goal);
   $('imgSelect').value = String(cfg.img);
   $('sensSelect').value = cfg.sens;
@@ -1981,6 +2029,7 @@ $('saveSettings').addEventListener('click', () => {
   const dp = document.querySelector('input[name=depth]:checked'); if (dp) cfg.depth = dp.value;
   cfg.think = thinks(cfg.depth);
   cfg.check = $('checkInput').checked;
+  { const r = document.querySelector('input[name=rot]:checked'); cfg.rot = r ? r.value : ''; }
   { const gv = Number($('goalInput').value); cfg.goal = Number.isFinite(gv) && gv >= 0 ? Math.min(16, gv) : 2; }
   cfg.img = Number($('imgSelect').value) || 1024;
   cfg.backups = [0, 1].map(i => ({ p:$('bk' + i + 'Prov').value, model:$('bk' + i + 'Model').value }))
@@ -1997,6 +2046,7 @@ $('saveSettings').addEventListener('click', () => {
   dlg.close();
   renderStats();
   layoutCrop();
+  applyLayout();
   if (camChanged) startCamera(cam);
   else if (st.stream) setStatus('idle', cfg.keys[cfg.prov] ? 'Watching' : `Add your ${PROV[cfg.prov].name} key in Settings`);
 });
