@@ -281,7 +281,7 @@ select option{background:#0A1838;color:var(--ink)}
   <section class="usage" id="usageBox" aria-labelledby="usageTitle">
     <h3 id="usageTitle">Today’s usage</h3>
     <table><tbody id="usageTable"></tbody></table>
-    <span class="note">Counters reset at midnight Pacific time.</span>
+    <span class="note" id="resetNote">Counters reset at midnight Pacific time.</span>
     <button type="button" class="plain" id="resetUsage">Reset today’s counters</button>
   </section>
 
@@ -370,7 +370,7 @@ select option{background:#0A1838;color:var(--ink)}
   </label>
 
   <div class="row"><button type="button" class="btn primary" id="saveSettings">Save</button></div>
-  <p class="version">Version 4.0</p>
+  <p class="version">Version 4.1</p>
 </dialog>
 
 <script>
@@ -454,7 +454,7 @@ function pacificDay(){
   catch (e) { return new Date().toISOString().slice(0, 10); }
 }
 function blankBy(){ const b = {}; IDS.forEach(p => { b[p] = { calls:0, inTok:0, outTok:0, answered:0 }; }); return b; }
-function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, quick:0, qSame:0, qDiff:0, checks:0, cSame:0, cDiff:0, calcOk:0, calcBad:0, follow:0, activeSec:0, models:{}, out:{},
+function blankUsage(){ return { day:pacificDay(), calls:0, answered:0, dup:0, none:0, blurry:0, aborted:0, errors:0, saved:0, alt:0, quick:0, qSame:0, qDiff:0, checks:0, cSame:0, cDiff:0, calcOk:0, calcBad:0, follow:0, activeSec:0, paceSec:0, paceCalls:0, models:{}, out:{},
            qFirstSum:0, qN:0, firstSum:0, doneSum:0, tN:0, inTok:0, outTok:0, estTok:0, by:blankBy() }; }
 let usage = blankUsage();
 try {
@@ -475,7 +475,7 @@ function rollDay(){ if (usage.day !== pacificDay()){ usage = blankUsage(); saveU
 function cost(){ return IDS.reduce((s, p) => s + (usage.by[p].inTok * Number(cfg.limits[p].pin) + usage.by[p].outTok * Number(cfg.limits[p].pout)) / 1e6, 0); }
 function money(x){ return '$' + (x < 0.01 ? x.toFixed(4) : x.toFixed(2)); }
 function kfmt(n){ return n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
-function count(p, m){ rollDay(); usage.calls++; usage.by[p].calls++; const k = mkey(p, m); usage.models[k] = (usage.models[k] || 0) + 1; saveUsage(); renderStats(); }
+function count(p, m){ rollDay(); usage.calls++; usage.paceCalls = (usage.paceCalls || 0) + 1; usage.by[p].calls++; const k = mkey(p, m); usage.models[k] = (usage.models[k] || 0) + 1; saveUsage(); renderStats(); }
 function applyUsage(m, u){
   m.seen = true;
   if (u.promptTokenCount) m.inTok = u.promptTokenCount;
@@ -497,7 +497,9 @@ function setStatus(kind, text){ st.kind = kind; $('status').dataset.kind = kind;
 function renderStats(){
   rollDay();
   const tl = $('statTime');
-  tl.textContent = `≈${fmtH(hoursLeft())} left today`;
+  const hl = hoursLeft(), ur = untilReset(), rs = hhmm(resetAt());
+  tl.textContent = hl >= ur ? `Enough calls until the reset at ${rs}` : `≈${fmtH(hl)} left, resets ${rs}`;
+  const rn = $('resetNote'); if (rn) rn.textContent = `Counters reset at midnight Pacific time, which is ${rs} for you.`;
   tl.className = saving() ? 'warnText' : '';
   const p = cfg.prov, k = mkey(p, cfg.models[p]), cap = cfg.limits[p].cap, used = usage.models[k] || 0;
   const c = $('statCalls');
@@ -604,12 +606,23 @@ function callsLeft(){
 }
 const PRIOR_RATE = 110;   // calls per active hour until your own pace is known: a new question about every 40 s, some double-checked
 function callRate(){
-  const h = (usage.activeSec || 0) / 3600, w = 10 / 60;   // the guess counts like 10 minutes of use
-  return (usage.calls + PRIOR_RATE * w) / (h + w);
+  const h = (usage.paceSec || 0) / 3600, w = 10 / 60;   // the guess counts like 10 minutes of use
+  return ((usage.paceCalls || 0) + PRIOR_RATE * w) / (h + w);
 }
+// When today's free limits reset: midnight Pacific time, shown in your own time
+function resetAt(){
+  const now = new Date();
+  try {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone:'America/Los_Angeles', hour:'numeric', minute:'numeric', second:'numeric', hourCycle:'h23' }).formatToParts(now).map(x => [x.type, x.value]));
+    const secs = (Number(parts.hour) % 24) * 3600 + Number(parts.minute) * 60 + Number(parts.second);
+    return new Date(now.getTime() + (86400 - secs) * 1000);
+  } catch (e) { return null; }
+}
+function hhmm(d){ return d ? d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : 'midnight Pacific'; }
 function hoursLeft(){ const r = callRate(); return r > 0 ? callsLeft() / r : Infinity; }
 function goalLeft(){ return Math.max(0, (Number(cfg.goal) || 0) - (usage.activeSec || 0) / 3600); }
-function saving(){ return Number(cfg.goal) > 0 && hoursLeft() < goalLeft(); }
+function untilReset(){ const r = resetAt(); return r ? (r.getTime() - Date.now()) / 3600000 : 24; }
+function saving(){ return Number(cfg.goal) > 0 && hoursLeft() < Math.min(goalLeft(), untilReset()); }
 function fmtH(h){
   if (!isFinite(h)) return 'plenty of time';
   const m = Math.max(0, Math.round(h * 60));
@@ -983,7 +996,7 @@ function addSig(e, sig){
 function tick(){
   if (!st.stream || st.paused || document.hidden || dlg.open || !$('drawLayer').hidden) return;
   const tNow = performance.now();
-  if (st.lastTickT){ usage.activeSec = (usage.activeSec || 0) + Math.min(1, (tNow - st.lastTickT) / 1000); if (Math.floor(usage.activeSec) % 20 === 0) { saveUsage(); renderStats(); } }
+  if (st.lastTickT){ const dt = Math.min(1, (tNow - st.lastTickT) / 1000); usage.paceSec = (usage.paceSec || 0) + dt; usage.activeSec = (usage.activeSec || 0) + dt; if (Math.floor(usage.activeSec) % 20 === 0) { saveUsage(); renderStats(); } }
   st.lastTickT = tNow;
   if (document.activeElement === $('followInput')) return;
   const g = grab(); if (!g) return;
@@ -1377,7 +1390,7 @@ async function ask(force, sig, info){
   const front = () => seq >= st.shownSeq;
   st.lastCall = now; noteCall(p, model, now);
   count(p, model);
-  const t0 = performance.now();
+  const t0 = performance.now(), prev = st.current;
   const meter = { inTok:0, outTok:0, seen:false, open:false };
   let buf = '', phase = 'head', entry = null, handled = false, retried = false;
 
@@ -1426,6 +1439,7 @@ async function ask(force, sig, info){
     if (phase === 'head'){
       const h = headOf(buf);
       if (h === null || h === false) return;
+      if (/^(none|n\/a|no (question|task|problem|text)|there is no)\b/i.test(h)){ phase = 'none'; return; }
       if (onHead(h)) return;
       say('asking', 'Answering…');
     }
@@ -1451,6 +1465,10 @@ async function ask(force, sig, info){
 
   try {
     await streamAny(p, model, img, ctrl.signal, hooks, lv);
+    if (phase === 'none' || (entry && /^\s*(NONE|BLURRY)\s*\.?\s*$/i.test(bodyOf(buf)))){
+      if (entry && st.current === entry){ if (prev) show(prev, false); else { st.current = null; $('qLine').textContent = ''; $('aBody').innerHTML = '<p class="empty">No question in view.</p>'; renderFollow(null); } }
+      bill(p, meter, 'none'); say('idle', 'No question in view'); return;
+    }
     if (phase === 'head'){
       const t = buf.replace(/^[\s*]+/, '');
       if (/^NONE/i.test(t)){ bill(p, meter, 'none'); say('idle', 'No question in view'); return; }
